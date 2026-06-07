@@ -6,6 +6,7 @@ import {
   fetchChartData,
   SYMBOL_TO_KRAKEN,
 } from '@/services/cryptoService';
+import { computeZones } from '@/services/liquidityZones';
 
 export type DataStatus = 'loading' | 'live' | 'polling' | 'mock';
 
@@ -18,7 +19,13 @@ export function useAssetData(symbol: string) {
 
   const applyPrice = useCallback(
     (price: number, change24h: number, changePercent24h: number) => {
-      setAssetData((prev) => ({ ...prev, price, change24h, changePercent24h }));
+      setAssetData((prev) => ({
+        ...prev,
+        price,
+        change24h,
+        changePercent24h,
+        ...computeZones(prev.symbol, price),
+      }));
     },
     []
   );
@@ -39,12 +46,14 @@ export function useAssetData(symbol: string) {
     const tryApply = () => {
       if (!mountedRef.current || !priceLoaded || !chartLoaded) return;
       if (priceResult) {
+        const zones = computeZones(symbol, priceResult.price);
         setAssetData((prev) => ({
           ...prev,
           price: priceResult!.price,
           change24h: priceResult!.change,
           changePercent24h: priceResult!.changePct,
           chartData: chartResult.length > 0 ? chartResult : prev.chartData,
+          ...zones,
         }));
         setStatus('polling');
       } else {
@@ -120,16 +129,11 @@ export function useAssetData(symbol: string) {
           }
         };
 
-        ws.onerror = () => {
-          ws.close();
-        };
+        ws.onerror = () => { ws.close(); };
 
         ws.onclose = () => {
           wsRef.current = null;
-          if (!closed) {
-            // Reconnect after 5s
-            reconnectTimer = setTimeout(connect, 5000);
-          }
+          if (!closed) reconnectTimer = setTimeout(connect, 5000);
         };
       } catch {
         // WebSocket constructor failed
@@ -141,10 +145,7 @@ export function useAssetData(symbol: string) {
     return () => {
       closed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
+      if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
     };
   }, [symbol, applyPrice]);
 
