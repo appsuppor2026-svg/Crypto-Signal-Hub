@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AssetData } from '@/types';
 import { useTranslation } from '@/i18n';
 import { motion } from 'framer-motion';
+import { Crosshair } from 'lucide-react';
 
 interface RadarScoreCardProps {
   asset: AssetData;
@@ -99,6 +100,25 @@ export function RadarScoreCard({ asset }: RadarScoreCardProps) {
           <MetricBar label={t('metrics.funding')} value={asset.metrics.funding} color="bg-green-500" />
           <MetricBar label={t('metrics.trend')} value={asset.metrics.trend} color="bg-blue-500" />
         </div>
+
+        {/* Liquidity Target Section */}
+        {asset.liquidityTarget && (
+          <div className="mt-6 pt-4 border-t border-border/30">
+            <div className="flex items-center space-x-2 mb-2 text-muted-foreground">
+              <Crosshair size={14} className="text-primary" />
+              <span className="text-xs font-bold uppercase tracking-wider">Objetivo de Liquidez</span>
+            </div>
+            <div className="flex items-end justify-between">
+              <span className="font-mono text-xl font-bold">
+                ${asset.liquidityTarget.price >= 1000 ? asset.liquidityTarget.price.toLocaleString() : asset.liquidityTarget.price.toFixed(3)}
+              </span>
+              <span className={`text-sm font-mono font-bold ${asset.liquidityTarget.distancePct >= 0 ? 'text-green-500' : 'text-destructive'}`}>
+                {asset.liquidityTarget.distancePct >= 0 ? '+' : ''}{asset.liquidityTarget.distancePct.toFixed(1)}%
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">Zona con mayor concentración de liquidez</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

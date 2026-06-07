@@ -46,11 +46,11 @@ export default function Dashboard() {
       </motion.div>
 
       <motion.div variants={item}>
-        <LiquidationZonesCard asset={assetData} />
+        <ChartArea asset={assetData} />
       </motion.div>
 
       <motion.div variants={item}>
-        <ChartArea asset={assetData} />
+        <LiquidationZonesCard asset={assetData} />
       </motion.div>
 
       <motion.div variants={item}>

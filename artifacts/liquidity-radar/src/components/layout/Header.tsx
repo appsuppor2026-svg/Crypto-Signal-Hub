@@ -10,7 +10,7 @@ import {
 
 export function Header() {
   const { selectedAsset, setSelectedAsset } = useAsset();
-  const availableAssets = ['BTC', 'XRP'];
+  const availableAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE'];
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border h-14">

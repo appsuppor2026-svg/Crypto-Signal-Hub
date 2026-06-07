@@ -2,12 +2,20 @@ const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
 export const SYMBOL_TO_COINGECKO: Record<string, string> = {
   BTC: 'bitcoin',
+  ETH: 'ethereum',
+  SOL: 'solana',
   XRP: 'ripple',
+  BNB: 'binancecoin',
+  DOGE: 'dogecoin',
 };
 
 export const SYMBOL_TO_KRAKEN: Record<string, string> = {
   BTC: 'BTC/USD',
+  ETH: 'ETH/USD',
+  SOL: 'SOL/USD',
   XRP: 'XRP/USD',
+  BNB: 'BNB/USD',
+  DOGE: 'DOGE/USD',
 };
 
 export interface CoinGeckoPrice {

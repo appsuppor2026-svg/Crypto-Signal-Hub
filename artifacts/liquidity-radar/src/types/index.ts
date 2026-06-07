@@ -14,6 +14,9 @@ export interface AssetData {
   };
   upperZone: { price: number; amount: string };
   lowerZone: { price: number; amount: string };
+  upperZoneLevels: Array<{ price: number; amount: string }>;
+  lowerZoneLevels: Array<{ price: number; amount: string }>;
+  liquidityTarget: { price: number; distancePct: number };
   chartData: Array<{ date: string; price: number }>;
 }
 

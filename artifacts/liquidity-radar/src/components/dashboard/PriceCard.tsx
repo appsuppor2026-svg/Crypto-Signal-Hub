@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AssetData } from '@/types';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { SiBitcoin, SiXrp } from 'react-icons/si';
+import { SiBitcoin, SiXrp, SiEthereum, SiSolana, SiBinance, SiDogecoin } from 'react-icons/si';
 
 interface PriceCardProps {
   asset: AssetData;
@@ -14,7 +14,11 @@ export function PriceCard({ asset }: PriceCardProps) {
   const renderIcon = () => {
     switch(asset.symbol) {
       case 'BTC': return <SiBitcoin size={24} className="text-[#F7931A]" />;
+      case 'ETH': return <SiEthereum size={24} className="text-[#627EEA]" />;
+      case 'SOL': return <SiSolana size={24} className="text-[#14F195]" />;
       case 'XRP': return <SiXrp size={24} className="text-foreground" />;
+      case 'BNB': return <SiBinance size={24} className="text-[#F3BA2F]" />;
+      case 'DOGE': return <SiDogecoin size={24} className="text-[#C2A633]" />;
       default: return <div className="w-6 h-6 rounded-full bg-muted" />;
     }
   };
