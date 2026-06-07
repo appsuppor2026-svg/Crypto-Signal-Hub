@@ -1,0 +1,136 @@
+Create a complete mobile-first React + TypeScript + Vite application called "Liquidity Radar Crypto".
+
+The application must be designed for Android mobile devices first, with a professional dark trading dashboard style.
+
+MAIN GOAL
+
+Build the first working version of a crypto liquidity analysis application.
+
+FEATURES FOR VERSION 1
+
+Header
+App name: Liquidity Radar Crypto
+Asset Selector
+Dropdown selector
+Default asset: BTC
+Available assets:
+BTC
+XRP
+Architecture must support adding more assets later
+Price Card
+Show:
+Current price
+24h change
+
+Use mock data for now.
+
+Radar Score Card
+Show:
+Score from 0 to 100
+Market bias:
+Bullish
+Neutral
+Bearish
+
+Breakdown:
+
+Liquidity
+Open Interest
+Funding
+Trend
+
+Use mock data.
+
+Liquidation Zones
+Create two sections:
+
+Upper Liquidity
+
+Price level
+Estimated liquidation amount
+
+Lower Liquidity
+
+Price level
+Estimated liquidation amount
+
+Use mock data.
+
+Chart Area
+Create a responsive chart section.
+Use placeholder chart data.
+Dark trading style.
+Alerts
+Create an alerts card.
+
+Examples:
+
+BTC is approaching a major liquidity zone
+XRP is near a liquidation cluster
+Bottom Navigation
+Create:
+
+Dashboard
+Markets
+Portfolio
+Settings
+
+Only Dashboard must be fully implemented.
+Other sections can be placeholders.
+
+Languages
+Prepare internationalization architecture.
+
+Languages:
+
+Spanish
+English
+
+Default language:
+
+Spanish
+
+Do not translate everything yet.
+Just prepare the architecture.
+
+User Profile Architecture
+Prepare data model for:
+Name
+Nickname
+Email
+Phone number (optional)
+Country
+Preferred language
+
+No login system yet.
+
+Legal Disclaimer
+
+Add a visible disclaimer:
+
+"Liquidity Radar Crypto provides market information and analysis tools only. It is not financial advice. Users are responsible for their own investment decisions."
+
+TECHNICAL REQUIREMENTS
+
+React
+TypeScript
+Vite
+Responsive mobile layout
+Dark theme
+Clean reusable components
+Component-based architecture
+Mock data stored separately
+Easy future integration with real APIs
+
+PROJECT STRUCTURE
+
+src/
+components/
+pages/
+data/
+services/
+types/
+
+Create all files required to make the application run successfully.
+
+The application must load directly into the Dashboard screen with BTC selected by default.

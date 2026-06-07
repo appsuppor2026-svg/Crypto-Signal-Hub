@@ -1,0 +1,54 @@
+import React from 'react';
+import { Bell, ChevronDown } from 'lucide-react';
+import { useAsset } from '@/context/AssetContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+export function Header() {
+  const { selectedAsset, setSelectedAsset } = useAsset();
+  const availableAssets = ['BTC', 'XRP'];
+
+  return (
+    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border h-14">
+      <div className="max-w-[430px] w-full mx-auto h-full px-4 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_10px_0_var(--color-primary)]/20">
+            <div className="w-4 h-4 rounded-full border-[2px] border-primary" />
+          </div>
+          <span className="font-bold text-sm font-mono text-foreground tracking-tight hidden sm:inline-block">
+            Radar
+          </span>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center space-x-1 bg-card border border-border px-3 py-1.5 rounded-full hover:bg-muted transition-colors focus:outline-none focus:ring-1 focus:ring-primary/50">
+              <span className="font-mono font-bold text-sm">{selectedAsset}</span>
+              <ChevronDown size={14} className="text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover border-border">
+              {availableAssets.map((asset) => (
+                <DropdownMenuItem
+                  key={asset}
+                  onClick={() => setSelectedAsset(asset)}
+                  className={`font-mono font-medium ${selectedAsset === asset ? 'text-primary' : 'text-foreground'}`}
+                >
+                  {asset}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <button className="relative text-muted-foreground hover:text-foreground transition-colors p-1">
+            <Bell size={20} />
+            <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border border-background shadow-[0_0_6px_0_var(--color-destructive)]" />
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
