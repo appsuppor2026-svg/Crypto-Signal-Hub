@@ -6,7 +6,7 @@ const translations = {
   es: {
     'app.title': 'Liquidity Radar',
     'nav.dashboard': 'Dashboard',
-    'nav.markets': 'Mercados',
+    'nav.markets': 'Arena',
     'nav.portfolio': 'Portafolio',
     'nav.settings': 'Ajustes',
     'bias.bullish': 'ALCISTA',
@@ -27,7 +27,7 @@ const translations = {
   en: {
     'app.title': 'Liquidity Radar',
     'nav.dashboard': 'Dashboard',
-    'nav.markets': 'Markets',
+    'nav.markets': 'Arena',
     'nav.portfolio': 'Portfolio',
     'nav.settings': 'Settings',
     'bias.bullish': 'BULLISH',

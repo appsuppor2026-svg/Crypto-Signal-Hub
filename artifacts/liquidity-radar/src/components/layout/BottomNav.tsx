@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation } from 'wouter';
-import { Home, BarChart2, Briefcase, Settings } from 'lucide-react';
+import { Home, Swords, Briefcase, Settings } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 
 export function BottomNav() {
@@ -9,7 +9,7 @@ export function BottomNav() {
 
   const navItems = [
     { path: '/', icon: Home, label: t('nav.dashboard') },
-    { path: '/markets', icon: BarChart2, label: t('nav.markets') },
+    { path: '/markets', icon: Swords, label: t('nav.markets') },
     { path: '/portfolio', icon: Briefcase, label: t('nav.portfolio') },
     { path: '/settings', icon: Settings, label: t('nav.settings') },
   ];

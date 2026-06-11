@@ -89,3 +89,44 @@ export async function fetchChartDataByTimeframe(symbol: string, timeframe: Chart
 export async function fetchChartData(symbol: string): Promise<ChartPoint[]> {
   return fetchChartDataByTimeframe(symbol, '7D');
 }
+
+export interface OHLCPoint {
+  date: string;
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export async function fetchOHLCData(symbol: string, timeframe: ChartTimeframe): Promise<OHLCPoint[]> {
+  const id = SYMBOL_TO_COINGECKO[symbol];
+  if (!id) return [];
+
+  const daysMap: Record<ChartTimeframe, number> = { '1D': 1, '7D': 7, '1M': 30 };
+  const days = daysMap[timeframe];
+
+  try {
+    const res = await fetch(
+      `${COINGECKO_BASE}/coins/${id}/ohlc?vs_currency=usd&days=${days}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if (!res.ok) return [];
+    const raw: [number, number, number, number, number][] = await res.json();
+
+    return raw.map(([ts, open, high, low, close]) => {
+      let date: string;
+      if (timeframe === '1D') {
+        date = new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      } else if (timeframe === '7D') {
+        const days2 = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        date = days2[new Date(ts).getDay()];
+      } else {
+        date = new Date(ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+      }
+      return { date, timestamp: ts, open, high, low, close };
+    });
+  } catch {
+    return [];
+  }
+}
