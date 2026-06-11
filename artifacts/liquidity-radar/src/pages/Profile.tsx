@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function Profile() {
-  const { t } = useTranslation();
+  const { t, setLanguage } = useTranslation();
   const { toast } = useToast();
   
   const [profile, setProfile] = useState({
@@ -36,6 +36,7 @@ export default function Profile() {
 
   const handleSave = () => {
     localStorage.setItem('lr_user_profile', JSON.stringify(profile));
+    setLanguage(profile.language as 'es' | 'en');
     toast({
       title: 'Perfil actualizado',
       description: 'Los cambios se han guardado correctamente.',
@@ -106,6 +107,19 @@ export default function Profile() {
                 onChange={e => handleChange('country', e.target.value)} 
                 placeholder="Ej. México"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="language">Idioma preferido</Label>
+              <Select value={profile.language} onValueChange={(v) => handleChange('language', v)}>
+                <SelectTrigger id="language">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="es">Español</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <Button className="w-full mt-6" onClick={handleSave}>

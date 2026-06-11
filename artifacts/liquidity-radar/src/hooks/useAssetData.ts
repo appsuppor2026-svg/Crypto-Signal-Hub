@@ -7,6 +7,7 @@ import {
   SYMBOL_TO_KRAKEN,
 } from '@/services/cryptoService';
 import { computeZones } from '@/services/liquidityZones';
+import { useAlerts } from '@/context/AlertsContext';
 
 export type DataStatus = 'loading' | 'live' | 'polling' | 'mock';
 
@@ -16,6 +17,7 @@ export function useAssetData(symbol: string) {
   const wsRef = useRef<WebSocket | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
+  const { checkAlerts } = useAlerts();
 
   const applyPrice = useCallback(
     (price: number, change24h: number, changePercent24h: number) => {
@@ -26,8 +28,9 @@ export function useAssetData(symbol: string) {
         changePercent24h,
         ...computeZones(prev.symbol, price),
       }));
+      checkAlerts(symbol, price);
     },
-    []
+    [checkAlerts, symbol]
   );
 
   // Initial fetch: price + chart from CoinGecko

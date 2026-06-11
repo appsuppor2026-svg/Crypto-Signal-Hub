@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Bell, ChevronDown } from 'lucide-react';
 import { useAsset } from '@/context/AssetContext';
+import { useAlerts } from '@/context/AlertsContext';
+import { PriceAlertsSheet } from '@/components/modals/PriceAlertsSheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +12,10 @@ import {
 
 export function Header() {
   const { selectedAsset, setSelectedAsset } = useAsset();
+  const { alerts } = useAlerts();
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const availableAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE'];
+  const hasActiveAlerts = alerts.some(a => !a.triggered);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border h-14">
@@ -43,12 +48,15 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <button className="relative text-muted-foreground hover:text-foreground transition-colors p-1">
+          <button onClick={() => setAlertsOpen(true)} className="relative text-muted-foreground hover:text-foreground transition-colors p-1">
             <Bell size={20} />
-            <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border border-background shadow-[0_0_6px_0_var(--color-destructive)]" />
+            {hasActiveAlerts && (
+              <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border border-background shadow-[0_0_6px_0_var(--color-destructive)]" />
+            )}
           </button>
         </div>
       </div>
+      <PriceAlertsSheet open={alertsOpen} onOpenChange={setAlertsOpen} />
     </header>
   );
 }

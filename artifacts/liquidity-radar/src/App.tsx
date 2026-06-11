@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { TranslationsProvider } from '@/i18n';
 import { AssetProvider } from '@/context/AssetContext';
+import { AlertsProvider } from '@/context/AlertsContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 import Dashboard from "@/pages/Dashboard";
@@ -50,17 +51,19 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TranslationsProvider>
         <AssetProvider>
-          <TooltipProvider>
-            {!disclaimerAccepted && (
-              <DisclaimerModal onAccept={handleAcceptDisclaimer} />
-            )}
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <AppLayout>
-                <Router />
-              </AppLayout>
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
+          <AlertsProvider>
+            <TooltipProvider>
+              {!disclaimerAccepted && (
+                <DisclaimerModal onAccept={handleAcceptDisclaimer} />
+              )}
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <AppLayout>
+                  <Router />
+                </AppLayout>
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </AlertsProvider>
         </AssetProvider>
       </TranslationsProvider>
     </QueryClientProvider>

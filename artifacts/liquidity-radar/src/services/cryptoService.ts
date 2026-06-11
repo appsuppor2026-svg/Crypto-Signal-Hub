@@ -44,22 +44,48 @@ export async function fetchCoinPrice(symbol: string): Promise<CoinGeckoPrice | n
   }
 }
 
-export async function fetchChartData(symbol: string): Promise<ChartPoint[]> {
+export type ChartTimeframe = '1D' | '7D' | '1M';
+
+export async function fetchChartDataByTimeframe(symbol: string, timeframe: ChartTimeframe): Promise<ChartPoint[]> {
   const id = SYMBOL_TO_COINGECKO[symbol];
   if (!id) return [];
+  
+  const params: Record<ChartTimeframe, { days: number; interval: string }> = {
+    '1D': { days: 1, interval: 'hourly' },
+    '7D': { days: 7, interval: 'daily' },
+    '1M': { days: 30, interval: 'daily' },
+  };
+  
+  const { days, interval } = params[timeframe];
+  
   try {
     const res = await fetch(
-      `${COINGECKO_BASE}/coins/${id}/market_chart?vs_currency=usd&days=7&interval=daily`,
+      `${COINGECKO_BASE}/coins/${id}/market_chart?vs_currency=usd&days=${days}&interval=${interval}`,
       { signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    return (data.prices as [number, number][]).map(([ts, price]) => ({
-      date: days[new Date(ts).getDay()],
-      price,
-    }));
+    
+    // For 1D hourly: format as "HH:mm", for others: day abbreviation
+    if (timeframe === '1D') {
+      return (data.prices as [number, number][]).map(([ts, price]) => ({
+        date: new Date(ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        price,
+      }));
+    } else {
+      const days2 = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      return (data.prices as [number, number][]).map(([ts, price]) => ({
+        date: timeframe === '1M'
+          ? new Date(ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+          : days2[new Date(ts).getDay()],
+        price,
+      }));
+    }
   } catch {
     return [];
   }
+}
+
+export async function fetchChartData(symbol: string): Promise<ChartPoint[]> {
+  return fetchChartDataByTimeframe(symbol, '7D');
 }

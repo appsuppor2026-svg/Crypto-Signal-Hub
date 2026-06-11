@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'es' | 'en';
 
@@ -55,8 +55,20 @@ type TranslationsContextType = {
 
 const TranslationsContext = createContext<TranslationsContextType | undefined>(undefined);
 
-export const TranslationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function TranslationsProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('es');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('lr_user_profile');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.language === 'en' || parsed.language === 'es') {
+          setLanguage(parsed.language);
+        }
+      }
+    } catch {}
+  }, []);
 
   const t = (key: keyof typeof translations['es']) => {
     return translations[language][key] || translations['es'][key] || key;
@@ -67,7 +79,7 @@ export const TranslationsProvider: React.FC<{ children: React.ReactNode }> = ({ 
       {children}
     </TranslationsContext.Provider>
   );
-};
+}
 
 export const useTranslation = () => {
   const context = useContext(TranslationsContext);
