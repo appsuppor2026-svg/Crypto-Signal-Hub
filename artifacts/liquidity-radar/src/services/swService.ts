@@ -59,12 +59,13 @@ export function getNotificationPermission(): NotificationPermission {
 export async function showNotificationViaRegistration(title: string, body: string) {
   const reg = registration || (await navigator.serviceWorker?.getRegistration());
   if (reg && Notification.permission === 'granted') {
-    await reg.showNotification(title, {
+    const opts: NotificationOptions & { vibrate?: number[] } = {
       body,
       icon: '/favicon.svg',
       badge: '/favicon.svg',
       requireInteraction: false,
       vibrate: [200, 100, 200],
-    });
+    };
+    await reg.showNotification(title, opts);
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Bell, ChevronDown } from 'lucide-react';
 import { useAsset } from '@/context/AssetContext';
 import { useAlerts } from '@/context/AlertsContext';
@@ -15,7 +15,11 @@ export function Header() {
   const { alerts } = useAlerts();
   const [alertsOpen, setAlertsOpen] = useState(false);
   const availableAssets = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'DOGE'];
-  const hasActiveAlerts = alerts.some(a => !a.triggered);
+
+  // Badge only when there's a freshly triggered alert (triggered in the last 10 minutes)
+  const recentlyTriggered = alerts.some(
+    a => a.triggered && a.triggeredAt && Date.now() - a.triggeredAt < 10 * 60 * 1000
+  );
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border h-14">
@@ -48,10 +52,13 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <button onClick={() => setAlertsOpen(true)} className="relative text-muted-foreground hover:text-foreground transition-colors p-1">
-            <Bell size={20} />
-            {hasActiveAlerts && (
-              <div className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border border-background shadow-[0_0_6px_0_var(--color-destructive)]" />
+          <button
+            onClick={() => setAlertsOpen(true)}
+            className="relative text-muted-foreground hover:text-foreground transition-colors p-1"
+          >
+            <Bell size={20} className={recentlyTriggered ? 'text-destructive animate-[wiggle_0.4s_ease-in-out_2]' : ''} />
+            {recentlyTriggered && (
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-destructive rounded-full border border-background shadow-[0_0_6px_0_rgba(239,68,68,0.8)] animate-pulse" />
             )}
           </button>
         </div>

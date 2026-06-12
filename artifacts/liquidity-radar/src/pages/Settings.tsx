@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { User, ChevronRight } from "lucide-react";
+import { User, ChevronRight, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
@@ -32,7 +32,7 @@ export default function Settings() {
       >
         <h1 className="text-2xl font-bold font-mono tracking-tight mb-6">{t("settings.title")}</h1>
         
-        <Card 
+        <Card
           className="bg-card border-border shadow-md cursor-pointer hover:bg-muted/50 transition-colors"
           onClick={() => setLocation('/profile')}
         >
@@ -44,6 +44,24 @@ export default function Settings() {
               <div>
                 <h2 className="font-medium text-foreground">Perfil de Usuario</h2>
                 <p className="text-sm text-muted-foreground">{nickname || "Configurar perfil"}</p>
+              </div>
+            </div>
+            <ChevronRight size={20} className="text-muted-foreground" />
+          </CardContent>
+        </Card>
+
+        <Card
+          className="bg-card border-border shadow-md cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setLocation('/support')}
+        >
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-500/10 text-blue-400 rounded-full">
+                <MessageSquare size={20} />
+              </div>
+              <div>
+                <h2 className="font-medium text-foreground">Soporte</h2>
+                <p className="text-sm text-muted-foreground">Preguntas frecuentes y contacto</p>
               </div>
             </div>
             <ChevronRight size={20} className="text-muted-foreground" />

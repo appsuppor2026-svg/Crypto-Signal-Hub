@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation } from 'wouter';
-import { Home, Swords, Briefcase, Settings } from 'lucide-react';
+import { Home, Swords, Brain, Settings } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 
 export function BottomNav() {
@@ -10,7 +10,7 @@ export function BottomNav() {
   const navItems = [
     { path: '/', icon: Home, label: t('nav.dashboard') },
     { path: '/markets', icon: Swords, label: t('nav.markets') },
-    { path: '/portfolio', icon: Briefcase, label: t('nav.portfolio') },
+    { path: '/ai', icon: Brain, label: t('nav.ai') },
     { path: '/settings', icon: Settings, label: t('nav.settings') },
   ];
 
@@ -20,7 +20,7 @@ export function BottomNav() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.path;
-          
+
           return (
             <button
               key={item.path}

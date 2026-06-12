@@ -12,8 +12,10 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import Dashboard from "@/pages/Dashboard";
 import Markets from "@/pages/Markets";
 import Portfolio from "@/pages/Portfolio";
+import AIAnalysis from "@/pages/AIAnalysis";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
+import Support from "@/pages/Support";
 import NotFound from "@/pages/not-found";
 import { DisclaimerModal } from '@/components/modals/DisclaimerModal';
 
@@ -24,9 +26,10 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/markets" component={Markets} />
-      <Route path="/portfolio" component={Portfolio} />
+      <Route path="/ai" component={AIAnalysis} />
       <Route path="/settings" component={Settings} />
       <Route path="/profile" component={Profile} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -98,6 +98,7 @@ export default function Markets() {
       const id = setInterval(pollOther, 30000);
       return () => clearInterval(id);
     }
+    return undefined;
   }, [positions, selectedAsset]);
 
   const capital = parseFloat(capitalStr) || 0;
