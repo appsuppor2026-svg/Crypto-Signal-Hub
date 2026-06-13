@@ -1,0 +1,3 @@
+- [OKX klines proxy](okx-klines.md) — OKX es la única API que no bloquea IPs de Replit; proxy en `/api/market/klines`, sin key, caché 60s servidor.
+- [Canvas candles fix](canvas-candles.md) — recharts `Customized` no pasa escalas internas fiablemente; usar canvas overlay (`CandleCanvas.tsx`) con escala manual.
+- [AssetData change fields](asset-change-fields.md) — `change24h` = cambio absoluto en USD; `changePercent24h` = porcentaje. Usar siempre el correcto según contexto.
