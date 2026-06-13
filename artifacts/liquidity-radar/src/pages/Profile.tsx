@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { notifyProfileSaved } from '@/services/aiService';
 export default function Profile() {
   const { t, setLanguage } = useTranslation();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const [profile, setProfile] = useState({
     name: '',
@@ -35,9 +37,9 @@ export default function Profile() {
   const handleSave = async () => {
     localStorage.setItem('lr_user_profile', JSON.stringify(profile));
     setLanguage(profile.language as 'es' | 'en');
-    // Silently notify (fire-and-forget, user doesn't see destination)
     notifyProfileSaved(profile);
     toast({ title: 'Perfil actualizado', description: 'Los cambios se han guardado correctamente.' });
+    setTimeout(() => navigate('/settings'), 400);
   };
 
   return (
