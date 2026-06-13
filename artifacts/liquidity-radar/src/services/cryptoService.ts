@@ -58,11 +58,13 @@ function fmtTime(ts: number, tf: ChartTimeframe): string {
     case '1H':
       return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     case '4H':
-      return `${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()]} ${d.getHours()}h`;
+      // CoinGecko days=7 returns 4H candles → include hour to keep labels unique
+      return `${['D','L','M','X','J','V','S'][d.getDay()]} ${d.getHours().toString().padStart(2,'0')}h`;
     case '1D':
       return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     case '7D':
-      return ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()];
+      // CoinGecko days=7 returns 4H candles → must include hour, else duplicate day labels
+      return `${['D','L','M','X','J','V','S'][d.getDay()]}${d.getHours().toString().padStart(2,'0')}h`;
     case '1M':
       return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
   }
