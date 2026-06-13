@@ -386,13 +386,13 @@ export default function Markets() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{t('arena.leverage')}</span>
-                <span className={`font-mono font-bold ${leverage >= 25 ? 'text-red-400' : leverage >= 10 ? 'text-amber-400' : 'text-green-400'}`}>
+                <span className={`font-mono font-bold ${leverage >= 50 ? 'text-red-400' : leverage >= 20 ? 'text-amber-400' : 'text-green-400'}`}>
                   {leverage}x
                 </span>
               </div>
-              <Slider value={[leverage]} min={1} max={50} step={1} onValueChange={([v]) => setLeverage(v)} />
+              <Slider value={[leverage]} min={1} max={100} step={1} onValueChange={([v]) => setLeverage(v)} />
               <div className="flex gap-1.5">
-                {[1, 5, 10, 25, 50].map(l => (
+                {[1, 10, 25, 50, 100].map(l => (
                   <Button key={l} variant="outline" size="sm"
                     className={`flex-1 h-7 text-xs font-mono ${leverage === l ? 'border-primary text-primary bg-primary/10' : 'border-border/50'}`}
                     onClick={() => setLeverage(l)}>
