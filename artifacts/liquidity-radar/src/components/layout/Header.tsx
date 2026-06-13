@@ -28,9 +28,13 @@ export function Header() {
           <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_10px_0_var(--color-primary)]/20">
             <div className="w-4 h-4 rounded-full border-[2px] border-primary" />
           </div>
-          <span className="font-bold text-sm font-mono text-foreground tracking-tight hidden sm:inline-block">
-            Radar
-          </span>
+          <div className="hidden sm:flex flex-col leading-tight">
+            <span className="font-bold text-sm font-mono text-foreground tracking-tight">LRC</span>
+            <span className="text-[8px] text-muted-foreground font-sans tracking-wide">Liquidity Radar Crypto</span>
+          </div>
+          <div className="flex sm:hidden flex-col leading-tight">
+            <span className="font-bold text-xs font-mono text-foreground tracking-tight">LRC</span>
+          </div>
         </div>
 
         <div className="flex items-center space-x-4">
