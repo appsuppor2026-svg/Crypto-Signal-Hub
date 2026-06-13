@@ -106,7 +106,7 @@ export function RadarScoreCard({ asset }: RadarScoreCardProps) {
           <div className="mt-6 pt-4 border-t border-border/30">
             <div className="flex items-center space-x-2 mb-2 text-muted-foreground">
               <Crosshair size={14} className="text-primary" />
-              <span className="text-xs font-bold uppercase tracking-wider">Objetivo de Liquidez</span>
+              <span className="text-xs font-bold uppercase tracking-wider">{t('zones.target')}</span>
             </div>
             <div className="flex items-end justify-between">
               <span className="font-mono text-xl font-bold">
@@ -116,7 +116,7 @@ export function RadarScoreCard({ asset }: RadarScoreCardProps) {
                 {asset.liquidityTarget.distancePct >= 0 ? '+' : ''}{asset.liquidityTarget.distancePct.toFixed(1)}%
               </span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">Zona con mayor concentración de liquidez</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{t('zones.targetDesc')}</p>
           </div>
         )}
       </CardContent>

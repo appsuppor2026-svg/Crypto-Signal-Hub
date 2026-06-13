@@ -1,4 +1,5 @@
 import { DataStatus } from '@/hooks/useAssetData';
+import { useTranslation } from '@/i18n';
 import { Wifi, WifiOff, Loader2, RefreshCw } from 'lucide-react';
 
 interface LiveBadgeProps {
@@ -6,11 +7,13 @@ interface LiveBadgeProps {
 }
 
 export function LiveBadge({ status }: LiveBadgeProps) {
+  const { t } = useTranslation();
+
   if (status === 'loading') {
     return (
       <div className="flex items-center space-x-1.5 text-muted-foreground text-xs font-mono">
         <Loader2 size={12} className="animate-spin" />
-        <span>Conectando a datos en tiempo real...</span>
+        <span>{t('livedata.connecting')}</span>
       </div>
     );
   }
@@ -19,7 +22,7 @@ export function LiveBadge({ status }: LiveBadgeProps) {
     return (
       <div className="flex items-center space-x-1.5 text-yellow-500/80 text-xs font-mono">
         <WifiOff size={12} />
-        <span>Datos de demostración (sin conexión)</span>
+        <span>{t('livedata.demo')}</span>
       </div>
     );
   }
@@ -28,7 +31,7 @@ export function LiveBadge({ status }: LiveBadgeProps) {
     return (
       <div className="flex items-center space-x-1.5 text-blue-400/80 text-xs font-mono">
         <RefreshCw size={12} />
-        <span>Precio actualizado · CoinGecko (cada 30s)</span>
+        <span>{t('livedata.polling')}</span>
       </div>
     );
   }
@@ -38,7 +41,7 @@ export function LiveBadge({ status }: LiveBadgeProps) {
       <Wifi size={12} />
       <span className="flex items-center gap-1.5">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-        Precio en tiempo real · Kraken
+        {t('livedata.realtime')}
       </span>
     </div>
   );

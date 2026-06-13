@@ -37,11 +37,15 @@ export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
               <div className="p-1.5 rounded-md bg-destructive/10 text-destructive">
                 <Flame size={16} />
               </div>
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">LIQUIDEZ SUPERIOR</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {t('zones.upper')}
+              </span>
             </div>
-            <div className="px-2 py-0.5 rounded bg-muted text-[10px] font-mono font-medium">Total: {asset.upperZone?.amount || '0M'}</div>
+            <div className="px-2 py-0.5 rounded bg-muted text-[10px] font-mono font-medium">
+              Total: {asset.upperZone?.amount || '0M'}
+            </div>
           </div>
-          
+
           <div className="space-y-3">
             {asset.upperZoneLevels?.map((level, idx) => {
               const amountNum = getAmountNum(level.amount);
@@ -70,11 +74,15 @@ export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
               <div className="p-1.5 rounded-md bg-green-500/10 text-green-500">
                 <ShieldCheck size={16} />
               </div>
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">LIQUIDEZ INFERIOR</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                {t('zones.lower')}
+              </span>
             </div>
-            <div className="px-2 py-0.5 rounded bg-muted text-[10px] font-mono font-medium">Total: {asset.lowerZone?.amount || '0M'}</div>
+            <div className="px-2 py-0.5 rounded bg-muted text-[10px] font-mono font-medium">
+              Total: {asset.lowerZone?.amount || '0M'}
+            </div>
           </div>
-          
+
           <div className="space-y-3">
             {asset.lowerZoneLevels?.map((level, idx) => {
               const amountNum = getAmountNum(level.amount);

@@ -23,7 +23,11 @@ export interface AssetData {
 export interface Alert {
   id: string;
   text: string;
+  textEn?: string;
+  textKey?: 'nearMajorZone' | 'clusterNear' | 'supportDetected';
+  textParam?: string;
   priority: 'high' | 'medium' | 'low';
   timestamp: string;
+  timestampKey?: 'agoMin' | 'ago12min' | 'agoHour';
   asset: string;
 }

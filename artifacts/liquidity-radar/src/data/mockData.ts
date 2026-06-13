@@ -196,7 +196,32 @@ export const mockAssets: Record<string, AssetData> = {
 };
 
 export const mockAlerts: Alert[] = [
-  { id: '1', text: 'BTC está cerca de una zona de liquidez mayor', priority: 'high', timestamp: 'Hace 5 min', asset: 'BTC' },
-  { id: '2', text: 'XRP se acerca a un clúster de liquidaciones', priority: 'medium', timestamp: 'Hace 12 min', asset: 'XRP' },
-  { id: '3', text: 'Zona de soporte fuerte detectada en $65,200', priority: 'low', timestamp: 'Hace 1 hora', asset: 'BTC' },
+  {
+    id: '1',
+    text: 'BTC está cerca de una zona de liquidez mayor',
+    textKey: 'nearMajorZone',
+    priority: 'high',
+    timestamp: 'Hace 5 min',
+    timestampKey: 'agoMin',
+    asset: 'BTC',
+  },
+  {
+    id: '2',
+    text: 'XRP se acerca a un clúster de liquidaciones',
+    textKey: 'clusterNear',
+    priority: 'medium',
+    timestamp: 'Hace 12 min',
+    timestampKey: 'ago12min',
+    asset: 'XRP',
+  },
+  {
+    id: '3',
+    text: 'Zona de soporte fuerte detectada en $65,200',
+    textKey: 'supportDetected',
+    textParam: '$65,200',
+    priority: 'low',
+    timestamp: 'Hace 1 hora',
+    timestampKey: 'agoHour',
+    asset: 'BTC',
+  },
 ];

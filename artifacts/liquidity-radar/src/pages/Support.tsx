@@ -21,7 +21,7 @@ const SUBJECTS = [
 const FAQS = [
   {
     q: '¿Los datos de precios son en tiempo real?',
-    a: 'Los precios se actualizan cada 30 segundos mediante CoinGecko, y los movimientos instantáneos llegan por WebSocket de Kraken.',
+    a: 'Los precios se actualizan automáticamente mediante CoinGecko y datos en tiempo real vía WebSocket.',
   },
   {
     q: '¿El simulador de trading usa dinero real?',

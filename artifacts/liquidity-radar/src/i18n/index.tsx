@@ -18,7 +18,20 @@ const translations = {
     'metrics.trend': 'Tendencia',
     'zones.upper': 'LIQUIDEZ SUPERIOR',
     'zones.lower': 'LIQUIDEZ INFERIOR',
+    'zones.target': 'Objetivo de Liquidez',
+    'zones.targetDesc': 'Zona con mayor concentración de liquidez',
     'alerts.title': 'Señales Activas',
+    'alerts.noSignals': 'Sin señales activas para este activo.',
+    'alerts.nearMajorZone': 'está cerca de una zona de liquidez mayor',
+    'alerts.clusterNear': 'se acerca a un clúster de liquidaciones',
+    'alerts.supportDetected': 'Zona de soporte fuerte detectada en',
+    'alerts.agoMin': 'Hace 5 min',
+    'alerts.ago12min': 'Hace 12 min',
+    'alerts.agoHour': 'Hace 1 hora',
+    'livedata.realtime': 'Precio en tiempo real',
+    'livedata.polling': 'Precio actualizado · CoinGecko (cada 30s)',
+    'livedata.connecting': 'Conectando a datos en tiempo real...',
+    'livedata.demo': 'Datos de demostración (sin conexión)',
     'disclaimer.text': 'Liquidity Radar Crypto provee información de mercado y herramientas de análisis únicamente. No es asesoramiento financiero. Los usuarios son responsables de sus propias decisiones de inversión.',
     'settings.title': 'Ajustes',
     'settings.language': 'Idioma',
@@ -39,7 +52,20 @@ const translations = {
     'metrics.trend': 'Trend',
     'zones.upper': 'UPPER LIQUIDITY',
     'zones.lower': 'LOWER LIQUIDITY',
+    'zones.target': 'Liquidity Target',
+    'zones.targetDesc': 'Highest liquidity concentration zone',
     'alerts.title': 'Active Signals',
+    'alerts.noSignals': 'No active signals for this asset.',
+    'alerts.nearMajorZone': 'is near a major liquidity zone',
+    'alerts.clusterNear': 'approaching a liquidation cluster',
+    'alerts.supportDetected': 'Strong support zone detected at',
+    'alerts.agoMin': '5 min ago',
+    'alerts.ago12min': '12 min ago',
+    'alerts.agoHour': '1 hour ago',
+    'livedata.realtime': 'Real-time price',
+    'livedata.polling': 'Price updated · CoinGecko (every 30s)',
+    'livedata.connecting': 'Connecting to live data...',
+    'livedata.demo': 'Demo data (offline)',
     'disclaimer.text': 'Liquidity Radar Crypto provides market information and analysis tools only. It is not financial advice. Users are responsible for their own investment decisions.',
     'settings.title': 'Settings',
     'settings.language': 'Language',
@@ -81,10 +107,8 @@ export function TranslationsProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useTranslation = () => {
-  const context = useContext(TranslationsContext);
-  if (!context) {
-    throw new Error('useTranslation must be used within a TranslationsProvider');
-  }
-  return context;
-};
+export function useTranslation() {
+  const ctx = useContext(TranslationsContext);
+  if (!ctx) throw new Error('useTranslation must be used within TranslationsProvider');
+  return ctx;
+}
