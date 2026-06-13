@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AssetData } from '@/types';
 import {
   ComposedChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, ReferenceLine, Line, BarChart, Bar, Cell, Customized,
+  CartesianGrid, ReferenceLine, Line, BarChart, Bar, Cell,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,158 +11,16 @@ import {
   fetchOHLCData, OHLCPoint,
 } from '@/services/cryptoService';
 import { calculateEMA, calculateBollingerBands, calculateSqueezeMomentum } from '@/services/indicators';
+import { CandleCanvas } from './CandleCanvas';
 
 interface ChartAreaProps { asset: AssetData; }
 type ChartMode = 'line' | 'candles';
 
-// ── Adaptive small periods ────────────────────────────────────────────────────
 const emaPer = (n: number) => Math.min(9,  Math.max(3, Math.floor(n * 0.25)));
 const bbPer  = (n: number) => Math.min(10, Math.max(3, Math.floor(n * 0.25)));
 const sqzPer = (n: number) => Math.min(10, Math.max(3, Math.floor(n * 0.25)));
 
-// ── Custom candle SVG renderer ────────────────────────────────────────────────
-// recharts ComposedChart+Line uses scalePoint: xScale(val) = CENTRE x position.
-// scaleBand: xScale(val) = LEFT edge (add bandwidth/2 for centre).
-const CandleSticks = ({ xAxisMap, yAxisMap, data }: any) => {
-  if (!xAxisMap || !yAxisMap || !data?.length) return null;
-  const xAxis = Object.values(xAxisMap)[0] as any;
-  const yAxis = Object.values(yAxisMap)[0] as any;
-  if (!xAxis?.scale || !yAxis?.scale) return null;
-  const xScale  = xAxis.scale;
-  const yScale  = yAxis.scale;
-  const isBand  = typeof xScale.bandwidth === 'function';
-  const range   = xScale.range?.() as [number, number] | undefined;
-  const n       = (data as OHLCPoint[]).length;
-  const step: number = isBand
-    ? xScale.bandwidth()
-    : range && n > 1 ? (range[1] - range[0]) / (n - 1) : 8;
-
-  return (
-    <g>
-      {(data as OHLCPoint[]).map((p) => {
-        const x0 = xScale(p.date);
-        if (x0 == null) return null;
-        const cx = isBand ? x0 + step / 2 : x0;
-        const cw = Math.max(step * 0.58, 1.5);
-        const oY = yScale(p.open),  cY = yScale(p.close);
-        const hY = yScale(p.high),  lY = yScale(p.low);
-        const up  = p.close >= p.open;
-        const col = up ? '#22c55e' : '#ef4444';
-        return (
-          <g key={p.timestamp}>
-            <line x1={cx} y1={hY} x2={cx} y2={lY} stroke={col} strokeWidth={1} opacity={0.9} />
-            <rect x={cx - cw / 2} y={Math.min(oY, cY)}
-              width={cw} height={Math.max(Math.abs(cY - oY), 1.5)}
-              fill={col} stroke={up ? '#16a34a' : '#dc2626'} strokeWidth={0.5} opacity={0.9} />
-          </g>
-        );
-      })}
-    </g>
-  );
-};
-
-// ── Indicator overlay SVG (drawn ON TOP of candles) ──────────────────────────
-interface IndicatorOverlayProps {
-  xAxisMap?: any; yAxisMap?: any;
-  emaValues: (number | null)[];
-  bbUValues: (number | null)[];
-  bbMValues: (number | null)[];
-  bbLValues: (number | null)[];
-  data: OHLCPoint[];
-  showEMA: boolean;
-  showBB: boolean;
-}
-const IndicatorOverlay = ({ xAxisMap, yAxisMap, emaValues, bbUValues, bbMValues, bbLValues, data, showEMA, showBB }: IndicatorOverlayProps) => {
-  if (!xAxisMap || !yAxisMap || !data.length) return null;
-  const xAxis = Object.values(xAxisMap)[0] as any;
-  const yAxis = Object.values(yAxisMap)[0] as any;
-  if (!xAxis?.scale || !yAxis?.scale) return null;
-  const xScale = xAxis.scale;
-  const yScale = yAxis.scale;
-  const isBand = typeof xScale.bandwidth === 'function';
-  const range  = xScale.range?.() as [number, number] | undefined;
-  const n      = data.length;
-  const step: number = isBand ? xScale.bandwidth()
-    : range && n > 1 ? (range[1] - range[0]) / (n - 1) : 8;
-
-  const pts = data.map((p, i) => {
-    const x0 = xScale(p.date);
-    if (x0 == null) return null;
-    const cx = isBand ? x0 + step / 2 : x0;
-    return { cx, ema: emaValues[i], bbU: bbUValues[i], bbM: bbMValues[i], bbL: bbLValues[i] };
-  }).filter(Boolean) as { cx: number; ema: number | null; bbU: number | null; bbM: number | null; bbL: number | null }[];
-
-  const toPath = (vals: (number | null)[], xs: number[]): string => {
-    let d = '';
-    vals.forEach((v, i) => {
-      if (v == null) return;
-      const y = yScale(v);
-      d += d === '' || vals[i - 1] == null ? `M${xs[i]},${y}` : `L${xs[i]},${y}`;
-    });
-    return d;
-  };
-
-  const xs = pts.map(p => p.cx);
-
-  return (
-    <g>
-      {showEMA && (
-        <path d={toPath(pts.map(p => p.ema), xs)} fill="none" stroke="#f97316" strokeWidth={1.5} opacity={0.9} />
-      )}
-      {showBB && (
-        <>
-          <path d={toPath(pts.map(p => p.bbU), xs)} fill="none" stroke="#60a5fa" strokeWidth={1.2} strokeDasharray="4 3" opacity={0.9} />
-          <path d={toPath(pts.map(p => p.bbM), xs)} fill="none" stroke="#60a5fa" strokeWidth={0.8} opacity={0.5} />
-          <path d={toPath(pts.map(p => p.bbL), xs)} fill="none" stroke="#60a5fa" strokeWidth={1.2} strokeDasharray="4 3" opacity={0.9} />
-        </>
-      )}
-    </g>
-  );
-};
-
-// ── SQZ overlay ──────────────────────────────────────────────────────────────
-interface SqzOverlayProps {
-  xAxisMap?: any; yAxisMap?: any;
-  sqzValues: (number | null)[];
-  data: OHLCPoint[];
-}
-const SqzBars = ({ xAxisMap, yAxisMap, sqzValues, data }: SqzOverlayProps) => {
-  if (!xAxisMap || !yAxisMap || !data.length) return null;
-  const xAxis = Object.values(xAxisMap)[0] as any;
-  const yAxis = Object.values(yAxisMap)[0] as any;
-  if (!xAxis?.scale || !yAxis?.scale) return null;
-  const xScale = xAxis.scale;
-  const yScale = yAxis.scale;
-  const isBand = typeof xScale.bandwidth === 'function';
-  const range  = xScale.range?.() as [number, number] | undefined;
-  const n      = data.length;
-  const step: number = isBand ? xScale.bandwidth()
-    : range && n > 1 ? (range[1] - range[0]) / (n - 1) : 8;
-  const zero = yScale(0);
-
-  return (
-    <g>
-      {data.map((p, i) => {
-        const v = sqzValues[i];
-        if (v == null) return null;
-        const x0 = xScale(p.date);
-        if (x0 == null) return null;
-        const cx = isBand ? x0 + step / 2 : x0;
-        const barW = Math.max(step * 0.55, 1.5);
-        const y = yScale(v);
-        const col = v > 0 ? '#22c55e' : '#ef4444';
-        return (
-          <rect key={p.timestamp}
-            x={cx - barW / 2} y={Math.min(y, zero)}
-            width={barW} height={Math.max(Math.abs(y - zero), 1)}
-            fill={col} opacity={0.85} />
-        );
-      })}
-    </g>
-  );
-};
-
-// ── Price label ───────────────────────────────────────────────────────────────
+// ── Price label on reference line ─────────────────────────────────────────────
 const PriceLabel = ({ viewBox, price }: any) => {
   if (!viewBox) return null;
   const { x, y, width } = viewBox;
@@ -213,7 +71,6 @@ export function ChartArea({ asset }: ChartAreaProps) {
   const [ohlcData,   setOhlcData]   = useState<OHLCPoint[]>([]);
   const [isLoading,  setIsLoading]  = useState(false);
 
-  // Indicator toggles (candles only)
   const [showEMA, setShowEMA] = useState(false);
   const [showBB,  setShowBB]  = useState(false);
   const [showSQZ, setShowSQZ] = useState(false);
@@ -229,7 +86,7 @@ export function ChartArea({ asset }: ChartAreaProps) {
       if (ohlc.length  > 0) setOhlcData(ohlc);
       if (line.length  > 0) setChartData(line);
       setIsLoading(false);
-    });
+    }).catch(() => { if (alive) setIsLoading(false); });
     return () => { alive = false; };
   }, [asset.symbol, selectedTF]);
 
@@ -242,9 +99,13 @@ export function ChartArea({ asset }: ChartAreaProps) {
   const strokeColor = asset.change24h >= 0 ? '#22c55e' : '#ef4444';
   const formatY = (v: number) => v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v.toFixed(2)}`;
 
-  // ── Pre-compute indicator arrays from candle closes ───────────────────────
+  // Indicator arrays from OHLC close prices
   const candleInd = useMemo(() => {
-    if (!ohlcData.length) return { ema: [] as (number|null)[], bbU: [] as (number|null)[], bbM: [] as (number|null)[], bbL: [] as (number|null)[], sqz: [] as (number|null)[] };
+    if (!ohlcData.length) return {
+      ema: [] as (number|null)[], bbU: [] as (number|null)[],
+      bbM: [] as (number|null)[], bbL: [] as (number|null)[],
+      sqz: [] as (number|null)[],
+    };
     const prices = ohlcData.map(d => d.close);
     const ep = emaPer(prices.length);
     const bp = bbPer(prices.length);
@@ -261,19 +122,24 @@ export function ChartArea({ asset }: ChartAreaProps) {
     };
   }, [ohlcData]);
 
-  const lineMin = chartData.length ? Math.min(...chartData.map(d => d.price)) : 0;
-  const lineMax = chartData.length ? Math.max(...chartData.map(d => d.price)) : 0;
-  const linePad = (lineMax - lineMin) * 0.15 || lineMax * 0.02;
-  const ohlcMin = ohlcData.length ? Math.min(...ohlcData.map(d => d.low))  * 0.998 : 0;
-  const ohlcMax = ohlcData.length ? Math.max(...ohlcData.map(d => d.high)) * 1.002 : 0;
+  const lineMin  = chartData.length ? Math.min(...chartData.map(d => d.price)) : 0;
+  const lineMax  = chartData.length ? Math.max(...chartData.map(d => d.price)) : 0;
+  const linePad  = (lineMax - lineMin) * 0.15 || lineMax * 0.02;
+  const ohlcMin  = ohlcData.length ? Math.min(...ohlcData.map(d => d.low))  * 0.998 : 0;
+  const ohlcMax  = ohlcData.length ? Math.max(...ohlcData.map(d => d.high)) * 1.002 : 0;
 
   const displayMode: ChartMode =
     chartMode === 'candles' && ohlcData.length === 0 && !isLoading ? 'line' : chartMode;
 
-  // SQZ sub-panel height
-  const sqzH   = 50;
+  const sqzH    = 50;
   const candleH = displayMode === 'candles' && showSQZ ? 265 : 310;
   const lineH   = 295;
+
+  // SQZ data for bar chart
+  const sqzBarData = useMemo(() =>
+    ohlcData.map((d, i) => ({ date: d.date, sqz: candleInd.sqz[i] ?? 0 })),
+    [ohlcData, candleInd.sqz]
+  );
 
   return (
     <Card className="bg-[#0a0a0a] border-border rounded-2xl overflow-hidden shadow-xl">
@@ -307,7 +173,7 @@ export function ChartArea({ asset }: ChartAreaProps) {
           </div>
         </div>
 
-        {/* Row 2: indicator toggles — CANDLES mode only */}
+        {/* Row 2: indicator toggles */}
         {displayMode === 'candles' && (
           <div className="flex gap-1.5 items-center">
             {([
@@ -334,7 +200,7 @@ export function ChartArea({ asset }: ChartAreaProps) {
           </div>
         )}
 
-        {/* ── LINE MODE ─────────────────────────────────────────────── */}
+        {/* ── LINE MODE ──────────────────────────────────────────────── */}
         {displayMode === 'line' && (
           <div style={{ height: lineH }} className="w-full pt-3 pr-1">
             <ResponsiveContainer width="100%" height="100%">
@@ -375,10 +241,11 @@ export function ChartArea({ asset }: ChartAreaProps) {
           </div>
         )}
 
-        {/* ── CANDLES MODE ───────────────────────────────────────────── */}
+        {/* ── CANDLES MODE ────────────────────────────────────────────── */}
         {displayMode === 'candles' && (
           <>
-            <div style={{ height: candleH }} className="w-full pt-3 pr-1">
+            {/* Wrapper is relative so CandleCanvas can overlay absolutely */}
+            <div style={{ height: candleH }} className="w-full pt-3 pr-1 relative">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={ohlcData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="hsl(var(--border))" opacity={0.2} />
@@ -387,8 +254,11 @@ export function ChartArea({ asset }: ChartAreaProps) {
                     interval="preserveStartEnd" />
                   <YAxis domain={[ohlcMin, ohlcMax]} axisLine={false} tickLine={false}
                     tickFormatter={formatY} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
-                    orientation="right" width={52} />
+                    orientation="right" width={54} />
+                  {/* Transparent line anchors recharts tooltip hit-area to candle data */}
                   <Tooltip content={<CandleTooltip />} />
+                  <Line dataKey="close" stroke="transparent" dot={false}
+                    legendType="none" isAnimationActive={false} />
                   <ReferenceLine y={asset.price} stroke="hsl(var(--primary))" strokeWidth={1.5}
                     strokeDasharray="5 3" opacity={0.85}
                     label={<PriceLabel price={asset.price} />} />
@@ -398,43 +268,34 @@ export function ChartArea({ asset }: ChartAreaProps) {
                   {asset.lowerZoneLevels?.map((lv, i) => (
                     <ReferenceLine key={`lc${i}`} y={lv.price} stroke="#22c55e" strokeDasharray="2 4" opacity={0.2} />
                   ))}
-                  {/* Anchor line: lets recharts set up Y-scale from ohlcData[].close */}
-                  <Line dataKey="close" stroke="transparent" dot={false} legendType="none" isAnimationActive={false} />
-
-                  {/* Layer 1: Candles */}
-                  <Customized component={(p: any) => <CandleSticks {...p} data={ohlcData} />} />
-
-                  {/* Layer 2: EMA + BB drawn ON TOP of candles via pure SVG */}
-                  {(showEMA || showBB) && (
-                    <Customized component={(p: any) => (
-                      <IndicatorOverlay
-                        {...p}
-                        data={ohlcData}
-                        emaValues={candleInd.ema}
-                        bbUValues={candleInd.bbU}
-                        bbMValues={candleInd.bbM}
-                        bbLValues={candleInd.bbL}
-                        showEMA={showEMA}
-                        showBB={showBB}
-                      />
-                    )} />
-                  )}
                 </ComposedChart>
               </ResponsiveContainer>
+
+              {/* Canvas overlay — candles + EMA + BB painted on top */}
+              <CandleCanvas
+                data={ohlcData}
+                yMin={ohlcMin}
+                yMax={ohlcMax}
+                mt={8} mr={58} mb={28}
+                showEMA={showEMA} ema={candleInd.ema}
+                showBB={showBB}   bbUpper={candleInd.bbU} bbLower={candleInd.bbL}
+              />
             </div>
 
-            {/* SQZ sub-panel */}
+            {/* SQZ sub-panel — standard recharts Bar (no Customized) */}
             {showSQZ && (
-              <div style={{ height: sqzH }} className="w-full pb-2 pr-12">
+              <div style={{ height: sqzH }} className="w-full pb-2 pr-[58px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={ohlcData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                  <BarChart data={sqzBarData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                    <ReferenceLine y={0} stroke="hsl(var(--border))" opacity={0.5} />
+                    <Bar dataKey="sqz" isAnimationActive={false}>
+                      {sqzBarData.map((d, i) => (
+                        <Cell key={i} fill={d.sqz > 0 ? '#22c55e' : '#ef4444'} opacity={0.7} />
+                      ))}
+                    </Bar>
                     <XAxis dataKey="date" hide />
                     <YAxis hide />
-                    <ReferenceLine y={0} stroke="hsl(var(--border))" />
-                    <Customized component={(p: any) => (
-                      <SqzBars {...p} data={ohlcData} sqzValues={candleInd.sqz} />
-                    )} />
-                  </ComposedChart>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
