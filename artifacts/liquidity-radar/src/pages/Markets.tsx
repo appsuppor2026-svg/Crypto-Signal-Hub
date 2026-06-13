@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { fetchCoinPrice } from "@/services/cryptoService";
 import { useToast } from "@/hooks/use-toast";
 import {
   Swords, TrendingUp, TrendingDown, Trophy, Clock, History,
-  ChevronDown, ChevronUp, Wallet, CalendarDays,
+  ChevronDown, ChevronUp, Wallet, CalendarDays, ShieldAlert,
+  Target, StopCircle,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -24,20 +25,17 @@ interface SimPosition {
   leverage: number;
   liquidationPrice: number;
   openedAt: number;
+  stopLoss?: number;
+  takeProfit?: number;
 }
 
 interface ClosedTrade {
-  id: string;
-  symbol: string;
-  direction: 'long' | 'short';
-  entryPrice: number;
-  closePrice: number;
-  capital: number;
-  leverage: number;
-  finalPnL: number;
-  finalPnLPct: number;
-  openedAt: number;
-  closedAt: number;
+  id: string; symbol: string; direction: 'long' | 'short';
+  entryPrice: number; closePrice: number;
+  capital: number; leverage: number;
+  finalPnL: number; finalPnLPct: number;
+  openedAt: number; closedAt: number;
+  closeReason?: 'manual' | 'sl' | 'tp' | 'liquidation';
 }
 
 type HistoryFilter = 'today' | 'week' | 'month' | 'all';
@@ -51,34 +49,28 @@ const INITIAL_BAL   = 10_000;
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function formatDuration(ms: number): string {
   const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s`;
+  if (s < 60)  return `${s}s`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
+  if (m < 60)  return `${m}m`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ${m % 60}m`;
+  if (h < 24)  return `${h}h ${m % 60}m`;
   return `${Math.floor(h / 24)}d ${h % 24}h`;
 }
-
 function formatLDR(v: number): string {
   return `${v >= 0 ? '' : '-'}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDLDR`;
 }
-
 function formatPrice(v: number): string {
   return v >= 1
     ? `$${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : `$${v.toFixed(5)}`;
 }
-
 function filterPeriodStart(filter: HistoryFilter): number {
   const now = Date.now();
-  if (filter === 'today') {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
-  }
-  if (filter === 'week') return now - 7 * 24 * 3600 * 1000;
-  if (filter === 'month') return now - 30 * 24 * 3600 * 1000;
+  if (filter === 'today')  { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  if (filter === 'week')   return now - 7  * 24 * 3600_000;
+  if (filter === 'month')  return now - 30 * 24 * 3600_000;
   return 0;
 }
-
 const FILTER_LABELS: Record<HistoryFilter, string> = {
   today: 'Hoy', week: 'Semana', month: 'Mes', all: 'Todo',
 };
@@ -86,19 +78,28 @@ const FILTER_LABELS: Record<HistoryFilter, string> = {
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Markets() {
   const { selectedAsset } = useAsset();
-  const { assetData } = useAssetData(selectedAsset);
-  const { toast } = useToast();
+  const { assetData }     = useAssetData(selectedAsset);
+  const { toast }         = useToast();
 
   const [positions, setPositions] = useState<SimPosition[]>([]);
   const [history, setHistory]     = useState<ClosedTrade[]>([]);
   const [balance, setBalance]     = useState(INITIAL_BAL);
-
   const [direction, setDirection] = useState<'long' | 'short'>('long');
   const [capitalStr, setCapitalStr] = useState('100');
   const [leverage, setLeverage]   = useState(10);
   const [prices, setPrices]       = useState<Record<string, number>>({});
   const [showHistory, setShowHistory] = useState(false);
-  const [histFilter, setHistFilter] = useState<HistoryFilter>('all');
+  const [histFilter, setHistFilter]   = useState<HistoryFilter>('all');
+
+  // SL / TP state
+  const [showRisk, setShowRisk]   = useState(false);
+  const [slEnabled, setSlEnabled] = useState(false);
+  const [tpEnabled, setTpEnabled] = useState(false);
+  const [slPct, setSlPct]         = useState('5');
+  const [tpPct, setTpPct]         = useState('10');
+
+  // Prevent double-closing the same position during a single render cycle
+  const closingRef = useRef<Set<string>>(new Set());
 
   // Load from localStorage
   useEffect(() => {
@@ -110,43 +111,49 @@ export default function Markets() {
     } catch {}
   }, []);
 
-  // Sync live price
+  // Sync live price for selected asset
   useEffect(() => {
-    if (assetData?.price) {
-      setPrices(prev => ({ ...prev, [selectedAsset]: assetData.price }));
-    }
+    if (assetData?.price) setPrices(prev => ({ ...prev, [selectedAsset]: assetData.price }));
   }, [assetData?.price, selectedAsset]);
 
   // Poll prices for other open positions
   useEffect(() => {
-    const pollOther = async () => {
-      const symbols = [...new Set(positions.map(p => p.symbol).filter(s => s !== selectedAsset))];
+    const symbols = [...new Set(positions.map(p => p.symbol).filter(s => s !== selectedAsset))];
+    if (!symbols.length) return;
+    const poll = async () => {
       for (const sym of symbols) {
-        const data = await fetchCoinPrice(sym);
+        const data = await fetchCoinPrice(sym).catch(() => null);
         if (data) setPrices(prev => ({ ...prev, [sym]: data.usd }));
       }
     };
-    if (positions.length > 0) {
-      pollOther();
-      const id = setInterval(pollOther, 30_000);
-      return () => clearInterval(id);
-    }
-    return undefined;
+    poll();
+    const id = setInterval(poll, 30_000);
+    return () => clearInterval(id);
   }, [positions, selectedAsset]);
 
-  // ── Derived ────────────────────────────────────────────────────────────────
-  const capital = parseFloat(capitalStr) || 0;
-  const currentPrice = assetData?.price || 0;
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const capital       = parseFloat(capitalStr) || 0;
+  const currentPrice  = assetData?.price || 0;
   const liquidationPrice = direction === 'long'
     ? currentPrice * (1 - 1 / leverage)
     : currentPrice * (1 + 1 / leverage);
-  const estimatedFee = capital * leverage * 0.0004;
-
-  // Reserved capital in open positions
+  const estimatedFee  = capital * leverage * 0.0004;
   const reservedCapital = positions.reduce((s, p) => s + p.capital, 0);
   const availableBalance = balance - reservedCapital;
 
-  // ── Persist helpers ────────────────────────────────────────────────────────
+  // SL/TP absolute prices
+  const slPrice = currentPrice > 0 ? (
+    direction === 'long'
+      ? currentPrice * (1 - parseFloat(slPct) / 100)
+      : currentPrice * (1 + parseFloat(slPct) / 100)
+  ) : 0;
+  const tpPrice = currentPrice > 0 ? (
+    direction === 'long'
+      ? currentPrice * (1 + parseFloat(tpPct) / 100)
+      : currentPrice * (1 - parseFloat(tpPct) / 100)
+  ) : 0;
+
+  // ── Persist helpers ───────────────────────────────────────────────────────
   const savePositions = (pos: SimPosition[]) => {
     setPositions(pos); localStorage.setItem(STORAGE_POS, JSON.stringify(pos));
   };
@@ -165,81 +172,109 @@ export default function Markets() {
       : ((pos.entryPrice - p) / pos.entryPrice) * pos.capital * pos.leverage;
   };
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Close position ────────────────────────────────────────────────────────
+  const closePosition = (id: string, reason: 'manual' | 'sl' | 'tp' | 'liquidation' = 'manual') => {
+    if (closingRef.current.has(id)) return;
+    closingRef.current.add(id);
+
+    setPositions(prev => {
+      const pos = prev.find(p => p.id === id);
+      if (!pos) { closingRef.current.delete(id); return prev; }
+
+      const pnl        = calculatePnL(pos);
+      const pnlPct     = (pnl / pos.capital) * 100;
+      const closePrice = prices[pos.symbol] || pos.entryPrice;
+
+      const trade: ClosedTrade = {
+        id: pos.id, symbol: pos.symbol, direction: pos.direction,
+        entryPrice: pos.entryPrice, closePrice,
+        capital: pos.capital, leverage: pos.leverage,
+        finalPnL: pnl, finalPnLPct: pnlPct,
+        openedAt: pos.openedAt, closedAt: Date.now(), closeReason: reason,
+      };
+
+      const newBalance = balance + pnl;
+      saveBalance(newBalance);
+
+      setHistory(hist => {
+        const updated = [trade, ...hist].slice(0, 100);
+        localStorage.setItem(STORAGE_HIST, JSON.stringify(updated));
+        return updated;
+      });
+
+      const icons = { tp: '🎯', sl: '🛑', liquidation: '💀', manual: pnl >= 0 ? '🏆' : '💸' };
+      const labels = { tp: 'Take Profit!', sl: 'Stop Loss activado', liquidation: 'Liquidado', manual: pnl >= 0 ? 'Ganancia' : 'Pérdida' };
+      toast({
+        title: `${icons[reason]} ${labels[reason]}`,
+        description: `P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} USDLDR · Saldo: ${newBalance.toFixed(2)} USDLDR`,
+        variant: reason === 'tp' ? 'default' : reason === 'sl' || reason === 'liquidation' ? 'destructive' : pnl >= 0 ? 'default' : 'destructive',
+      });
+
+      setTimeout(() => closingRef.current.delete(id), 2000);
+      const next = prev.filter(p => p.id !== id);
+      localStorage.setItem(STORAGE_POS, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // ── Auto-close: SL / TP / Liquidation ────────────────────────────────────
+  useEffect(() => {
+    for (const pos of positions) {
+      const p = prices[pos.symbol];
+      if (!p || closingRef.current.has(pos.id)) continue;
+
+      // Liquidation check
+      if (pos.direction === 'long'  && p <= pos.liquidationPrice) { closePosition(pos.id, 'liquidation'); continue; }
+      if (pos.direction === 'short' && p >= pos.liquidationPrice) { closePosition(pos.id, 'liquidation'); continue; }
+
+      // Take Profit
+      if (pos.takeProfit) {
+        if (pos.direction === 'long'  && p >= pos.takeProfit) { closePosition(pos.id, 'tp'); continue; }
+        if (pos.direction === 'short' && p <= pos.takeProfit) { closePosition(pos.id, 'tp'); continue; }
+      }
+      // Stop Loss
+      if (pos.stopLoss) {
+        if (pos.direction === 'long'  && p <= pos.stopLoss) { closePosition(pos.id, 'sl'); continue; }
+        if (pos.direction === 'short' && p >= pos.stopLoss) { closePosition(pos.id, 'sl'); continue; }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prices]);
+
+  // ── Open position ─────────────────────────────────────────────────────────
   const handleOpen = () => {
     if (capital <= 0 || !currentPrice) return;
     if (capital > availableBalance) {
-      toast({
-        title: 'Saldo insuficiente',
-        description: `Disponible: ${formatLDR(availableBalance)}`,
-        variant: 'destructive',
-      });
+      toast({ title: 'Saldo insuficiente', description: `Disponible: ${formatLDR(availableBalance)}`, variant: 'destructive' });
       return;
     }
     const pos: SimPosition = {
       id: Math.random().toString(36).substring(7),
-      symbol: selectedAsset,
-      direction,
-      entryPrice: currentPrice,
-      capital,
-      leverage,
-      liquidationPrice,
+      symbol: selectedAsset, direction,
+      entryPrice: currentPrice, capital, leverage, liquidationPrice,
       openedAt: Date.now(),
+      ...(slEnabled && slPrice > 0 ? { stopLoss: slPrice } : {}),
+      ...(tpEnabled && tpPrice > 0 ? { takeProfit: tpPrice } : {}),
     };
     savePositions([...positions, pos]);
     setCapitalStr('100');
-    toast({ title: '⚔️ Posición abierta', description: `${direction.toUpperCase()} ${leverage}x en ${selectedAsset} · −${capital.toFixed(2)} USDLDR reservados` });
-  };
-
-  const handleClose = (id: string) => {
-    const pos = positions.find(p => p.id === id);
-    if (!pos) return;
-    const pnl = calculatePnL(pos);
-    const pnlPct = (pnl / pos.capital) * 100;
-    const closePrice = prices[pos.symbol] || pos.entryPrice;
-
-    const trade: ClosedTrade = {
-      id: pos.id, symbol: pos.symbol, direction: pos.direction,
-      entryPrice: pos.entryPrice, closePrice,
-      capital: pos.capital, leverage: pos.leverage,
-      finalPnL: pnl, finalPnLPct: pnlPct,
-      openedAt: pos.openedAt, closedAt: Date.now(),
-    };
-
-    // Return capital + PnL to balance
-    const newBalance = balance + pnl;
-    saveBalance(newBalance);
-    savePositions(positions.filter(p => p.id !== id));
-    saveHistory([trade, ...history].slice(0, 100));
-
-    const isProfit = pnl >= 0;
-    toast({
-      title: isProfit ? '🏆 Ganancia' : '💸 Pérdida',
-      description: `P&L: ${isProfit ? '+' : ''}${pnl.toFixed(2)} USDLDR · Saldo: ${newBalance.toFixed(2)} USDLDR`,
-      variant: isProfit ? 'default' : 'destructive',
-    });
+    toast({ title: '⚔️ Posición abierta', description: `${direction.toUpperCase()} ${leverage}x · ${selectedAsset} · −${capital.toFixed(2)} USDLDR` });
   };
 
   const handleReset = () => {
     if (!confirm('¿Resetear saldo a 10.000 USDLDR y borrar historial?')) return;
-    savePositions([]);
-    saveHistory([]);
-    saveBalance(INITIAL_BAL);
+    savePositions([]); saveHistory([]); saveBalance(INITIAL_BAL);
     toast({ title: '🔄 Cuenta reseteada', description: 'Saldo restaurado a 10.000 USDLDR' });
   };
 
-  // ── History filtering ──────────────────────────────────────────────────────
-  const periodStart = filterPeriodStart(histFilter);
-  const filteredHistory = history.filter(t => t.closedAt >= periodStart);
-  const totalPnL   = filteredHistory.reduce((s, t) => s + t.finalPnL, 0);
-  const wins       = filteredHistory.filter(t => t.finalPnL > 0).length;
-  const winRate    = filteredHistory.length > 0 ? Math.round((wins / filteredHistory.length) * 100) : 0;
-
-  // Global stats for all-time
-  const allTimePnL = history.reduce((s, t) => s + t.finalPnL, 0);
-
-  // Balance color
-  const balanceColor = balance >= INITIAL_BAL ? 'text-green-400' : balance >= INITIAL_BAL * 0.5 ? 'text-amber-400' : 'text-red-400';
+  // ── History stats ─────────────────────────────────────────────────────────
+  const periodStart      = filterPeriodStart(histFilter);
+  const filteredHistory  = history.filter(t => t.closedAt >= periodStart);
+  const totalPnL         = filteredHistory.reduce((s, t) => s + t.finalPnL, 0);
+  const wins             = filteredHistory.filter(t => t.finalPnL > 0).length;
+  const winRate          = filteredHistory.length > 0 ? Math.round((wins / filteredHistory.length) * 100) : 0;
+  const allTimePnL       = history.reduce((s, t) => s + t.finalPnL, 0);
+  const balanceColor     = balance >= INITIAL_BAL ? 'text-green-400' : balance >= INITIAL_BAL * 0.5 ? 'text-amber-400' : 'text-red-400';
 
   return (
     <div className="flex-1 pb-24 overflow-y-auto">
@@ -278,14 +313,8 @@ export default function Markets() {
               <span className="text-base ml-1 font-semibold opacity-70">USDLDR</span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-              <div>
-                <div className="text-muted-foreground mb-0.5">Disponible</div>
-                <div className="font-mono font-medium text-foreground">{availableBalance.toFixed(2)}</div>
-              </div>
-              <div>
-                <div className="text-muted-foreground mb-0.5">Reservado</div>
-                <div className="font-mono font-medium text-amber-400">{reservedCapital.toFixed(2)}</div>
-              </div>
+              <div><div className="text-muted-foreground mb-0.5">Disponible</div><div className="font-mono font-medium">{availableBalance.toFixed(2)}</div></div>
+              <div><div className="text-muted-foreground mb-0.5">Reservado</div><div className="font-mono font-medium text-amber-400">{reservedCapital.toFixed(2)}</div></div>
               <div>
                 <div className="text-muted-foreground mb-0.5">P&L Total</div>
                 <div className={`font-mono font-medium ${allTimePnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -299,9 +328,7 @@ export default function Markets() {
         {/* Live price */}
         <div className="text-center py-2">
           <div className="text-xs font-mono text-muted-foreground">{selectedAsset}/USD</div>
-          <div className="text-4xl font-mono font-bold tracking-tighter my-1">
-            {formatPrice(currentPrice)}
-          </div>
+          <div className="text-4xl font-mono font-bold tracking-tighter my-1">{formatPrice(currentPrice)}</div>
           <div className={`text-sm font-bold ${(assetData?.change24h ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             {(assetData?.change24h ?? 0) >= 0 ? '▲' : '▼'} {Math.abs(assetData?.changePercent24h ?? 0).toFixed(2)}%
           </div>
@@ -331,18 +358,11 @@ export default function Markets() {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Capital (USDLDR)</span>
-                <span className="font-mono font-medium text-muted-foreground">
-                  Disponible: {availableBalance.toFixed(2)}
-                </span>
+                <span className="font-mono font-medium text-muted-foreground">Disponible: {availableBalance.toFixed(2)}</span>
               </div>
-              <Input
-                type="number"
-                value={capitalStr}
-                onChange={e => setCapitalStr(e.target.value)}
-                className={`font-mono text-base h-10 ${capital > availableBalance ? 'border-red-500/50 focus-visible:ring-red-500/30' : ''}`}
-                min={1} max={availableBalance}
-              />
-              {/* Quick % buttons */}
+              <Input type="number" value={capitalStr} onChange={e => setCapitalStr(e.target.value)}
+                className={`font-mono text-base h-10 ${capital > availableBalance ? 'border-red-500/50' : ''}`}
+                min={1} max={availableBalance} />
               <div className="flex gap-1">
                 {[25, 50, 75, 100].map(pct => (
                   <Button key={pct} variant="outline" size="sm"
@@ -374,6 +394,98 @@ export default function Markets() {
               </div>
             </div>
 
+            {/* ── Stop Loss / Take Profit ────────────────────────────── */}
+            <div className="border border-border/40 rounded-xl overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs hover:bg-muted/40 transition-colors"
+                onClick={() => setShowRisk(v => !v)}
+              >
+                <span className="flex items-center gap-1.5 font-semibold text-muted-foreground">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  Stop Loss / Take Profit
+                  {(slEnabled || tpEnabled) && (
+                    <span className="ml-1 px-1.5 py-0 rounded text-[9px] font-bold bg-primary/15 text-primary border border-primary/20">
+                      {[slEnabled && 'SL', tpEnabled && 'TP'].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                </span>
+                {showRisk ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+              </button>
+
+              <AnimatePresence>
+                {showRisk && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden border-t border-border/40"
+                  >
+                    <div className="px-3.5 py-3 space-y-3">
+                      {/* Stop Loss row */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant={slEnabled ? 'destructive' : 'outline'}
+                            size="sm"
+                            className={`h-6 px-2 text-[10px] font-bold gap-1 ${slEnabled ? '' : 'border-red-500/30 text-red-400/60'}`}
+                            onClick={() => setSlEnabled(v => !v)}
+                          >
+                            <StopCircle className="w-3 h-3" /> SL
+                          </Button>
+                          <div className={`flex items-center gap-1 flex-1 ${!slEnabled ? 'opacity-40' : ''}`}>
+                            <Input type="number" value={slPct} disabled={!slEnabled}
+                              onChange={e => setSlPct(e.target.value)}
+                              className="h-7 text-xs font-mono text-center" min={0.5} max={99} step={0.5} />
+                            <span className="text-xs text-muted-foreground shrink-0">%</span>
+                          </div>
+                          {slEnabled && currentPrice > 0 && (
+                            <span className="text-[10px] font-mono text-red-400 shrink-0 min-w-[60px] text-right">
+                              {formatPrice(slPrice)}
+                            </span>
+                          )}
+                        </div>
+                        {slEnabled && (
+                          <div className="text-[10px] text-muted-foreground/60 pl-14">
+                            {direction === 'long' ? '↓ Cierra automático si baja a este precio' : '↑ Cierra automático si sube a este precio'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Take Profit row */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant={tpEnabled ? 'default' : 'outline'}
+                            size="sm"
+                            className={`h-6 px-2 text-[10px] font-bold gap-1 ${tpEnabled ? 'bg-green-500 hover:bg-green-600 text-white border-0' : 'border-green-500/30 text-green-400/60'}`}
+                            onClick={() => setTpEnabled(v => !v)}
+                          >
+                            <Target className="w-3 h-3" /> TP
+                          </Button>
+                          <div className={`flex items-center gap-1 flex-1 ${!tpEnabled ? 'opacity-40' : ''}`}>
+                            <Input type="number" value={tpPct} disabled={!tpEnabled}
+                              onChange={e => setTpPct(e.target.value)}
+                              className="h-7 text-xs font-mono text-center" min={0.5} max={1000} step={0.5} />
+                            <span className="text-xs text-muted-foreground shrink-0">%</span>
+                          </div>
+                          {tpEnabled && currentPrice > 0 && (
+                            <span className="text-[10px] font-mono text-green-400 shrink-0 min-w-[60px] text-right">
+                              {formatPrice(tpPrice)}
+                            </span>
+                          )}
+                        </div>
+                        {tpEnabled && (
+                          <div className="text-[10px] text-muted-foreground/60 pl-14">
+                            {direction === 'long' ? '↑ Cierra automático al alcanzar este precio' : '↓ Cierra automático al alcanzar este precio'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Summary */}
             <div className="bg-muted/40 rounded-xl p-3 space-y-2 text-xs">
               <div className="flex justify-between">
@@ -388,6 +500,18 @@ export default function Markets() {
                 <span className="text-muted-foreground">Liquidación</span>
                 <span className="font-mono text-red-400">{formatPrice(liquidationPrice)}</span>
               </div>
+              {slEnabled && slPrice > 0 && (
+                <div className="flex justify-between border-t border-border/30 pt-1.5">
+                  <span className="text-red-400/80 flex items-center gap-1"><StopCircle className="w-3 h-3" />Stop Loss</span>
+                  <span className="font-mono text-red-400">{formatPrice(slPrice)} (−{parseFloat(slPct).toFixed(1)}%)</span>
+                </div>
+              )}
+              {tpEnabled && tpPrice > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-green-400/80 flex items-center gap-1"><Target className="w-3 h-3" />Take Profit</span>
+                  <span className="font-mono text-green-400">{formatPrice(tpPrice)} (+{parseFloat(tpPct).toFixed(1)}%)</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-border/30 pt-2">
                 <span className="text-muted-foreground">Comisión est.</span>
                 <span className="font-mono text-muted-foreground">{estimatedFee.toFixed(3)} USDLDR</span>
@@ -425,8 +549,8 @@ export default function Markets() {
               No tienes posiciones abiertas
             </div>
           ) : positions.map(pos => {
-            const pnl = calculatePnL(pos);
-            const pnlPct = (pnl / pos.capital) * 100;
+            const pnl      = calculatePnL(pos);
+            const pnlPct   = (pnl / pos.capital) * 100;
             const isProfit = pnl >= 0;
             const currentP = prices[pos.symbol] || pos.entryPrice;
             const isWarning = pnlPct <= -80;
@@ -451,17 +575,35 @@ export default function Markets() {
                         </div>
                       </div>
                     </div>
+
                     <div className="grid grid-cols-3 gap-2 text-xs bg-muted/30 rounded-lg p-2.5">
                       <div><div className="text-muted-foreground mb-0.5">Entrada</div><div className="font-mono text-[11px]">{formatPrice(pos.entryPrice)}</div></div>
                       <div><div className="text-muted-foreground mb-0.5">Actual</div><div className="font-mono text-[11px]">{formatPrice(currentP)}</div></div>
                       <div><div className="text-muted-foreground mb-0.5">Duración</div><div className="font-mono text-[11px] flex items-center gap-0.5"><Clock className="w-3 h-3" />{formatDuration(Date.now() - pos.openedAt)}</div></div>
                     </div>
+
+                    {/* SL / TP badges */}
+                    {(pos.stopLoss || pos.takeProfit) && (
+                      <div className="flex gap-2 text-[10px] font-mono">
+                        {pos.stopLoss && (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-400">
+                            <StopCircle className="w-2.5 h-2.5" />SL {formatPrice(pos.stopLoss)}
+                          </span>
+                        )}
+                        {pos.takeProfit && (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400">
+                            <Target className="w-2.5 h-2.5" />TP {formatPrice(pos.takeProfit)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {isWarning && (
                       <div className="text-[11px] text-red-400 font-bold text-center bg-red-500/10 rounded-lg py-1.5 animate-pulse">
                         ⚠️ Peligro de liquidación — cierra pronto
                       </div>
                     )}
-                    <Button variant="outline" className="w-full h-8 text-sm font-medium" onClick={() => handleClose(pos.id)}>
+                    <Button variant="outline" className="w-full h-8 text-sm font-medium" onClick={() => closePosition(pos.id)}>
                       Cerrar Posición
                     </Button>
                   </CardContent>
@@ -497,7 +639,7 @@ export default function Markets() {
                   ))}
                 </div>
 
-                {/* Stats for selected period */}
+                {/* Stats */}
                 {filteredHistory.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-card border border-border rounded-xl p-3 text-center">
@@ -522,53 +664,45 @@ export default function Markets() {
                     <Trophy className="w-8 h-8 mx-auto mb-2 opacity-20" />
                     {histFilter === 'all' ? 'Aún no has cerrado operaciones' : `Sin operaciones en ${FILTER_LABELS[histFilter].toLowerCase()}`}
                   </div>
-                ) : (
-                  filteredHistory.map((trade) => {
-                    const isProfit = trade.finalPnL >= 0;
-                    const date = new Date(trade.closedAt).toLocaleDateString('es-ES', {
-                      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                    });
-                    const dur = formatDuration(trade.closedAt - trade.openedAt);
-                    return (
-                      <div key={trade.id} className={`flex items-center justify-between p-3 rounded-xl border ${isProfit ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-mono font-bold text-sm">{trade.symbol}</span>
-                            <Badge className={`text-[9px] font-bold px-1.5 py-0 ${trade.direction === 'long' ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'}`}>
-                              {trade.direction.toUpperCase()} {trade.leverage}x
-                            </Badge>
-                            {isProfit ? <TrendingUp className="w-3.5 h-3.5 text-green-400" /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground font-mono">
-                            {formatPrice(trade.entryPrice)} → {formatPrice(trade.closePrice)}
-                            <span className="ml-2 opacity-60">{dur} · {date}</span>
-                          </div>
+                ) : filteredHistory.map((trade) => {
+                  const isProfit = trade.finalPnL >= 0;
+                  const date = new Date(trade.closedAt).toLocaleDateString('es-ES', {
+                    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                  });
+                  const dur = formatDuration(trade.closedAt - trade.openedAt);
+                  const reasonIcon = trade.closeReason === 'tp' ? '🎯' : trade.closeReason === 'sl' ? '🛑' : trade.closeReason === 'liquidation' ? '💀' : '';
+
+                  return (
+                    <div key={trade.id} className={`flex items-center justify-between p-3 rounded-xl border ${isProfit ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono font-bold text-sm">{trade.symbol}</span>
+                          <Badge className={`text-[9px] font-bold px-1.5 py-0 ${trade.direction === 'long' ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'}`}>
+                            {trade.direction.toUpperCase()} {trade.leverage}x
+                          </Badge>
+                          {reasonIcon && <span className="text-xs">{reasonIcon}</span>}
+                          {isProfit ? <TrendingUp className="w-3.5 h-3.5 text-green-400" /> : <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
                         </div>
-                        <div className="text-right ml-3 shrink-0">
-                          <div className={`font-mono font-bold text-sm ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
-                            {isProfit ? '+' : ''}{trade.finalPnL.toFixed(2)}
-                          </div>
-                          <div className={`font-mono text-[10px] opacity-70 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
-                            {trade.finalPnLPct > 0 ? '+' : ''}{trade.finalPnLPct.toFixed(2)}%
-                          </div>
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          {formatPrice(trade.entryPrice)} → {formatPrice(trade.closePrice)}
+                          <span className="ml-2 opacity-60">{dur} · {date}</span>
                         </div>
                       </div>
-                    );
-                  })
-                )}
-
-                {history.length > 0 && (
-                  <button
-                    className="w-full text-xs text-muted-foreground/50 hover:text-muted-foreground py-2 transition-colors"
-                    onClick={() => { if (confirm('¿Borrar todo el historial?')) { saveHistory([]); setShowHistory(false); } }}>
-                    Borrar historial
-                  </button>
-                )}
+                      <div className="text-right ml-3 shrink-0">
+                        <div className={`font-mono font-bold text-sm ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                          {isProfit ? '+' : ''}{trade.finalPnL.toFixed(2)}
+                        </div>
+                        <div className={`font-mono text-[10px] opacity-70 ${isProfit ? 'text-green-400' : 'text-red-400'}`}>
+                          {trade.finalPnLPct > 0 ? '+' : ''}{trade.finalPnLPct.toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
       </motion.div>
     </div>
   );

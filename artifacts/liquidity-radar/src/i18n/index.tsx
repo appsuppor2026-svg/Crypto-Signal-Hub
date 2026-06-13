@@ -7,7 +7,7 @@ const translations = {
     'app.title': 'Liquidity Radar',
     'nav.dashboard': 'Dashboard',
     'nav.markets': 'Arena',
-    'nav.ai': 'IA',
+    'nav.ai': 'SAE',
     'nav.settings': 'Ajustes',
     'bias.bullish': 'ALCISTA',
     'bias.neutral': 'NEUTRAL',

@@ -10,18 +10,17 @@ interface LiquidationZonesCardProps {
 export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
   const { t } = useTranslation();
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD',
       minimumFractionDigits: price < 1 ? 4 : 2,
       maximumFractionDigits: price < 1 ? 4 : 2,
     }).format(price);
-  };
 
-  const getAmountNum = (amountStr: string) => {
-    return parseFloat(amountStr.replace(/[^0-9.]/g, '')) || 0;
-  };
+  const pctFromCurrent = (levelPrice: number) =>
+    ((levelPrice - asset.price) / asset.price) * 100;
+
+  const getAmountNum = (s: string) => parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
 
   const maxUpper = Math.max(...(asset.upperZoneLevels?.map(l => getAmountNum(l.amount)) || [1]));
   const maxLower = Math.max(...(asset.lowerZoneLevels?.map(l => getAmountNum(l.amount)) || [1]));
@@ -29,7 +28,7 @@ export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
   return (
     <div className="flex flex-col space-y-4">
       {/* Upper Liquidity */}
-      <Card className="bg-card border-border rounded-xl relative overflow-hidden group">
+      <Card className="bg-card border-border rounded-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-destructive/5 rounded-full blur-3xl -mr-10 -mt-10" />
         <CardContent className="p-4 relative z-10">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/50">
@@ -49,15 +48,19 @@ export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
           <div className="space-y-3">
             {asset.upperZoneLevels?.map((level, idx) => {
               const amountNum = getAmountNum(level.amount);
-              const percent = (amountNum / maxUpper) * 100;
-              const isMax = amountNum === maxUpper;
+              const percent   = (amountNum / maxUpper) * 100;
+              const isMax     = amountNum === maxUpper;
+              const pct       = pctFromCurrent(level.price);
               return (
-                <div key={idx} className={`flex items-center justify-between ${isMax ? 'text-destructive' : 'text-muted-foreground'}`}>
-                  <span className="font-mono text-sm w-24">{formatPrice(level.price)}</span>
-                  <div className="flex-1 mx-3 h-2 bg-background rounded-full overflow-hidden border border-border/30">
+                <div key={idx} className={`flex items-center gap-2 ${isMax ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  <span className="font-mono text-sm w-[88px] shrink-0">{formatPrice(level.price)}</span>
+                  <div className="flex-1 h-2 bg-background rounded-full overflow-hidden border border-border/30">
                     <div className={`h-full ${isMax ? 'bg-destructive' : 'bg-destructive/50'}`} style={{ width: `${percent}%` }} />
                   </div>
-                  <span className="font-mono text-sm w-12 text-right">{level.amount}</span>
+                  <span className="font-mono text-sm w-12 text-right shrink-0">{level.amount}</span>
+                  <span className={`text-[10px] font-mono font-bold w-12 text-right shrink-0 ${isMax ? 'text-destructive' : 'text-red-400/70'}`}>
+                    +{pct.toFixed(1)}%
+                  </span>
                 </div>
               );
             })}
@@ -66,7 +69,7 @@ export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
       </Card>
 
       {/* Lower Liquidity */}
-      <Card className="bg-card border-border rounded-xl relative overflow-hidden group">
+      <Card className="bg-card border-border rounded-xl relative overflow-hidden">
         <div className="absolute bottom-0 right-0 w-32 h-32 bg-green-500/5 rounded-full blur-3xl -mr-10 -mb-10" />
         <CardContent className="p-4 relative z-10">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/50">
@@ -86,15 +89,19 @@ export function LiquidationZonesCard({ asset }: LiquidationZonesCardProps) {
           <div className="space-y-3">
             {asset.lowerZoneLevels?.map((level, idx) => {
               const amountNum = getAmountNum(level.amount);
-              const percent = (amountNum / maxLower) * 100;
-              const isMax = amountNum === maxLower;
+              const percent   = (amountNum / maxLower) * 100;
+              const isMax     = amountNum === maxLower;
+              const pct       = pctFromCurrent(level.price);
               return (
-                <div key={idx} className={`flex items-center justify-between ${isMax ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  <span className="font-mono text-sm w-24">{formatPrice(level.price)}</span>
-                  <div className="flex-1 mx-3 h-2 bg-background rounded-full overflow-hidden border border-border/30">
+                <div key={idx} className={`flex items-center gap-2 ${isMax ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  <span className="font-mono text-sm w-[88px] shrink-0">{formatPrice(level.price)}</span>
+                  <div className="flex-1 h-2 bg-background rounded-full overflow-hidden border border-border/30">
                     <div className={`h-full ${isMax ? 'bg-green-500' : 'bg-green-500/50'}`} style={{ width: `${percent}%` }} />
                   </div>
-                  <span className="font-mono text-sm w-12 text-right">{level.amount}</span>
+                  <span className="font-mono text-sm w-12 text-right shrink-0">{level.amount}</span>
+                  <span className={`text-[10px] font-mono font-bold w-12 text-right shrink-0 ${isMax ? 'text-green-500' : 'text-green-400/70'}`}>
+                    {pct.toFixed(1)}%
+                  </span>
                 </div>
               );
             })}
