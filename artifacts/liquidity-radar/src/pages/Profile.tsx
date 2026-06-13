@@ -38,22 +38,22 @@ export default function Profile() {
     localStorage.setItem('lr_user_profile', JSON.stringify(profile));
     setLanguage(profile.language as 'es' | 'en');
     notifyProfileSaved(profile);
-    toast({ title: 'Perfil actualizado', description: 'Los cambios se han guardado correctamente.' });
+    toast({ title: t('profile.saved'), description: t('profile.savedDesc') });
     setTimeout(() => navigate('/settings'), 400);
   };
 
   return (
     <div className="flex-1 flex flex-col p-4 space-y-6 pb-24">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <h1 className="text-2xl font-bold font-mono tracking-tight mb-6">Perfil de Usuario</h1>
+        <h1 className="text-2xl font-bold font-mono tracking-tight mb-6">{t('profile.title')}</h1>
 
         <Card className="bg-card border-border shadow-md">
           <CardHeader>
-            <CardTitle className="text-lg">Información Personal</CardTitle>
+            <CardTitle className="text-lg">{t('profile.personalInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre completo</Label>
+              <Label htmlFor="name">{t('profile.fullName')}</Label>
               <Input id="name" value={profile.name} onChange={e => handleChange('name', e.target.value)} placeholder="Ej. Juan Pérez" />
             </div>
             <div className="space-y-2">
@@ -61,19 +61,19 @@ export default function Profile() {
               <Input id="nickname" value={profile.nickname} onChange={e => handleChange('nickname', e.target.value)} placeholder="Ej. CryptoTrader99" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="email">{t('profile.email')}</Label>
               <Input id="email" type="email" value={profile.email} onChange={e => handleChange('email', e.target.value)} placeholder="correo@ejemplo.com" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono (opcional)</Label>
+              <Label htmlFor="phone">{t('profile.phone')}</Label>
               <Input id="phone" type="tel" value={profile.phone} onChange={e => handleChange('phone', e.target.value)} placeholder="+1 234 567 8900" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="country">País</Label>
+              <Label htmlFor="country">{t('profile.country')}</Label>
               <Input id="country" value={profile.country} onChange={e => handleChange('country', e.target.value)} placeholder="Ej. México" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="language">Idioma preferido</Label>
+              <Label htmlFor="language">{t('profile.preferredLang')}</Label>
               <Select value={profile.language} onValueChange={v => handleChange('language', v)}>
                 <SelectTrigger id="language"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -83,7 +83,7 @@ export default function Profile() {
               </Select>
             </div>
             <Button className="w-full mt-6" onClick={handleSave}>
-              Guardar cambios
+              {t('profile.save')}
             </Button>
           </CardContent>
         </Card>

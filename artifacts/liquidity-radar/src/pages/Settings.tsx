@@ -42,8 +42,8 @@ export default function Settings() {
                 <User size={20} />
               </div>
               <div>
-                <h2 className="font-medium text-foreground">Perfil de Usuario</h2>
-                <p className="text-sm text-muted-foreground">{nickname || "Configurar perfil"}</p>
+                <h2 className="font-medium text-foreground">{t('settings.profile')}</h2>
+                <p className="text-sm text-muted-foreground">{nickname || t('settings.profileDesc')}</p>
               </div>
             </div>
             <ChevronRight size={20} className="text-muted-foreground" />
@@ -60,8 +60,8 @@ export default function Settings() {
                 <MessageSquare size={20} />
               </div>
               <div>
-                <h2 className="font-medium text-foreground">Soporte</h2>
-                <p className="text-sm text-muted-foreground">Preguntas frecuentes y contacto</p>
+                <h2 className="font-medium text-foreground">{t('support.title')}</h2>
+                <p className="text-sm text-muted-foreground">{t('settings.supportDesc')}</p>
               </div>
             </div>
             <ChevronRight size={20} className="text-muted-foreground" />

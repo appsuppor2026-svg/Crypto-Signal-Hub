@@ -141,6 +141,21 @@ const translations = {
     'support.sub.sugerencia': '💡 Sugerencia de mejora',
     'support.sub.cuenta': '👤 Datos de cuenta',
     'support.sub.otro': '📩 Otro',
+    // Settings
+    'settings.profile': 'Perfil de Usuario',
+    'settings.profileDesc': 'Configurar perfil',
+    'settings.supportDesc': 'Preguntas frecuentes y contacto',
+    // Profile
+    'profile.title': 'Perfil de Usuario',
+    'profile.personalInfo': 'Información Personal',
+    'profile.fullName': 'Nombre completo',
+    'profile.email': 'Correo electrónico',
+    'profile.phone': 'Teléfono (opcional)',
+    'profile.country': 'País',
+    'profile.preferredLang': 'Idioma preferido',
+    'profile.save': 'Guardar cambios',
+    'profile.saved': 'Perfil actualizado',
+    'profile.savedDesc': 'Los cambios se han guardado correctamente.',
   },
   en: {
     'app.title': 'Liquidity Radar',
@@ -280,6 +295,21 @@ const translations = {
     'support.sub.sugerencia': '💡 Feature suggestion',
     'support.sub.cuenta': '👤 Account data',
     'support.sub.otro': '📩 Other',
+    // Settings
+    'settings.profile': 'User Profile',
+    'settings.profileDesc': 'Set up profile',
+    'settings.supportDesc': 'FAQ and contact',
+    // Profile
+    'profile.title': 'User Profile',
+    'profile.personalInfo': 'Personal Information',
+    'profile.fullName': 'Full name',
+    'profile.email': 'Email address',
+    'profile.phone': 'Phone (optional)',
+    'profile.country': 'Country',
+    'profile.preferredLang': 'Preferred language',
+    'profile.save': 'Save changes',
+    'profile.saved': 'Profile updated',
+    'profile.savedDesc': 'Your changes have been saved successfully.',
   }
 };
 
