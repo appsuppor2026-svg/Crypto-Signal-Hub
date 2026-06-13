@@ -8,37 +8,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { sendContactForm } from '@/services/aiService';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/i18n';
 import { MessageSquare, Send, CheckCircle2, HelpCircle, AlertCircle, Lightbulb } from 'lucide-react';
-
-const SUBJECTS = [
-  { value: 'consulta', label: '❓ Consulta general', icon: HelpCircle },
-  { value: 'error', label: '🐛 Reportar un error', icon: AlertCircle },
-  { value: 'sugerencia', label: '💡 Sugerencia de mejora', icon: Lightbulb },
-  { value: 'cuenta', label: '👤 Datos de cuenta', icon: MessageSquare },
-  { value: 'otro', label: '📩 Otro', icon: MessageSquare },
-];
-
-const FAQS = [
-  {
-    q: '¿Los datos de precios son en tiempo real?',
-    a: 'Los precios se actualizan automáticamente mediante CoinGecko y datos en tiempo real vía WebSocket.',
-  },
-  {
-    q: '¿El simulador de trading usa dinero real?',
-    a: 'No. CryptoArena es un simulador sin riesgo real. Ninguna posición involucra fondos reales.',
-  },
-  {
-    q: '¿Cómo funcionan las zonas de liquidez?',
-    a: 'Las zonas se calculan dinámicamente a partir del precio actual, volumen y patrones históricos de liquidación.',
-  },
-  {
-    q: '¿Puedo fiarme del análisis IA?',
-    a: 'El análisis IA es informativo. No es asesoramiento financiero. Úsalo como herramienta de apoyo, no como señal definitiva.',
-  },
-];
 
 export default function Support() {
   const { toast } = useToast();
+  const { t } = useTranslation();
+
+  const SUBJECTS = [
+    { value: 'consulta',    label: t('support.sub.consulta'),    icon: HelpCircle },
+    { value: 'error',       label: t('support.sub.error'),       icon: AlertCircle },
+    { value: 'sugerencia',  label: t('support.sub.sugerencia'),  icon: Lightbulb },
+    { value: 'cuenta',      label: t('support.sub.cuenta'),      icon: MessageSquare },
+    { value: 'otro',        label: t('support.sub.otro'),        icon: MessageSquare },
+  ];
+
+  const FAQS = [
+    { q: t('support.faq0.q'), a: t('support.faq0.a') },
+    { q: t('support.faq1.q'), a: t('support.faq1.a') },
+    { q: t('support.faq2.q'), a: t('support.faq2.a') },
+    { q: t('support.faq3.q'), a: t('support.faq3.a') },
+  ];
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('consulta');
@@ -47,7 +38,6 @@ export default function Support() {
   const [sent, setSent] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  // Prefill from profile if available
   useState(() => {
     try {
       const saved = localStorage.getItem('lr_user_profile');
@@ -61,7 +51,7 @@ export default function Support() {
 
   const handleSend = async () => {
     if (!message.trim() || message.trim().length < 10) {
-      toast({ title: 'Mensaje muy corto', description: 'Escribe al menos 10 caracteres.', variant: 'destructive' });
+      toast({ title: t('support.tooShort'), description: t('support.tooShortDesc'), variant: 'destructive' });
       return;
     }
     setSending(true);
@@ -71,9 +61,9 @@ export default function Support() {
     if (ok) {
       setSent(true);
       setMessage('');
-      toast({ title: '✅ Mensaje enviado', description: 'Nuestro equipo lo revisará pronto.' });
+      toast({ title: t('support.sentToast'), description: t('support.sentToastDesc') });
     } else {
-      toast({ title: 'Error al enviar', description: 'Inténtalo de nuevo en unos minutos.', variant: 'destructive' });
+      toast({ title: t('support.errorSend'), description: t('support.errorSendDesc'), variant: 'destructive' });
     }
   };
 
@@ -81,21 +71,19 @@ export default function Support() {
     <div className="flex-1 pb-24 overflow-y-auto">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 p-4">
 
-        {/* Header */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
             <MessageSquare className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Soporte</h1>
-            <p className="text-[10px] text-muted-foreground">Estamos aquí para ayudarte</p>
+            <h1 className="font-bold text-lg leading-tight">{t('support.title')}</h1>
+            <p className="text-[10px] text-muted-foreground">{t('support.subtitle')}</p>
           </div>
         </div>
 
-        {/* FAQ */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">Preguntas frecuentes</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">{t('support.faqTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-2">
             {FAQS.map((faq, i) => (
@@ -117,12 +105,11 @@ export default function Support() {
           </CardContent>
         </Card>
 
-        {/* Contact form */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-2 pt-4 px-4">
             <CardTitle className="text-base flex items-center gap-2">
               <Send className="w-4 h-4 text-blue-400" />
-              Envía tu consulta
+              {t('support.sendTitle')}
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-4">
@@ -132,28 +119,28 @@ export default function Support() {
                   <CheckCircle2 className="w-7 h-7 text-green-400" />
                 </div>
                 <div>
-                  <p className="font-semibold text-green-400">¡Mensaje enviado!</p>
-                  <p className="text-xs text-muted-foreground mt-1">Te responderemos lo antes posible.</p>
+                  <p className="font-semibold text-green-400">{t('support.sentTitle')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('support.sentDesc')}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setSent(false)}>
-                  Enviar otra consulta
+                  {t('support.anotherQuery')}
                 </Button>
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Nombre (opcional)</Label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Tu nombre" className="h-9 text-sm" />
+                    <Label className="text-xs">{t('support.name')}</Label>
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder={t('support.namePh')} className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Email (opcional)</Label>
-                    <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="para respuesta" className="h-9 text-sm" />
+                    <Label className="text-xs">{t('support.email')}</Label>
+                    <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('support.emailPh')} className="h-9 text-sm" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Asunto</Label>
+                  <Label className="text-xs">{t('support.subject')}</Label>
                   <Select value={subject} onValueChange={setSubject}>
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue />
@@ -167,14 +154,14 @@ export default function Support() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Mensaje <span className="text-destructive">*</span></Label>
+                  <Label className="text-xs">{t('support.message')} <span className="text-destructive">*</span></Label>
                   <Textarea
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    placeholder="Describe tu consulta con el mayor detalle posible..."
+                    placeholder={t('support.messagePh')}
                     className="min-h-[110px] text-sm resize-none"
                   />
-                  <p className="text-[10px] text-muted-foreground/60 text-right">{message.length} caracteres</p>
+                  <p className="text-[10px] text-muted-foreground/60 text-right">{message.length} {t('support.chars')}</p>
                 </div>
 
                 <Button
@@ -183,9 +170,9 @@ export default function Support() {
                   disabled={sending || message.trim().length < 10}
                 >
                   {sending ? (
-                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Enviando...</>
+                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {t('support.sending')}</>
                   ) : (
-                    <><Send className="w-4 h-4" /> Enviar consulta</>
+                    <><Send className="w-4 h-4" /> {t('support.sendBtn')}</>
                   )}
                 </Button>
               </>
@@ -194,7 +181,7 @@ export default function Support() {
         </Card>
 
         <p className="text-[10px] text-muted-foreground/40 text-center">
-          Liquidity Radar Crypto · Soporte en español
+          {t('support.footer')}
         </p>
       </motion.div>
     </div>

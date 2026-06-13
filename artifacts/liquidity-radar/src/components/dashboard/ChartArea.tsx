@@ -12,6 +12,7 @@ import {
 } from '@/services/cryptoService';
 import { calculateEMA, calculateBollingerBands, calculateSqueezeMomentum } from '@/services/indicators';
 import { CandleCanvas } from './CandleCanvas';
+import { useTranslation } from '@/i18n';
 
 interface ChartAreaProps { asset: AssetData; }
 type ChartMode = 'line' | 'candles';
@@ -65,6 +66,7 @@ const TF_LABELS: Record<ChartTimeframe, string> = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function ChartArea({ asset }: ChartAreaProps) {
+  const { t } = useTranslation();
   const [selectedTF, setSelectedTF] = useState<ChartTimeframe>('1H');
   const [chartMode,  setChartMode]  = useState<ChartMode>('candles');
   const [chartData,  setChartData]  = useState<ChartPoint[]>(asset.chartData ?? []);
@@ -151,7 +153,7 @@ export function ChartArea({ asset }: ChartAreaProps) {
             {(['line','candles'] as ChartMode[]).map(m => (
               <Button key={m} variant="ghost" size="sm" onClick={() => setChartMode(m)}
                 className={`h-6 px-2 text-[10px] rounded-md ${displayMode === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>
-                {m === 'candles' ? '🕯 Velas' : '📈 Línea'}
+                {m === 'candles' ? t('chart.candles') : t('chart.line')}
               </Button>
             ))}
           </div>

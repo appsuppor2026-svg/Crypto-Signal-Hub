@@ -9,6 +9,7 @@ import { runSmartAnalysis, SmartAnalysisResult } from '@/services/smartAnalysis'
 import { fetchOHLCData, OHLCPoint, ChartTimeframe } from '@/services/cryptoService';
 import { calculateEMA, calculateBollingerBands, calculateSqueezeMomentum } from '@/services/indicators';
 import { CandleCanvas } from '@/components/dashboard/CandleCanvas';
+import { useTranslation } from '@/i18n';
 import {
   ComposedChart, XAxis, YAxis, ResponsiveContainer,
   CartesianGrid, ReferenceLine, Line, Tooltip,
@@ -19,7 +20,6 @@ import {
   Zap, Activity, Eye, EyeOff,
 } from 'lucide-react';
 
-// ── Candle tooltip ────────────────────────────────────────────────────────────
 const CandleTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload as OHLCPoint;
@@ -49,10 +49,10 @@ const TF_LABELS: Record<string, string> = {
   '5M':'5m','15M':'15m','1H':'1h','4H':'4h','1D':'1D','7D':'7D',
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function AIAnalysis() {
   const { selectedAsset } = useAsset();
   const { assetData }     = useAssetData(selectedAsset);
+  const { t, language }   = useTranslation();
 
   const [timeframe, setTimeframe]   = useState<ChartTimeframe>('1H');
   const [ohlcData, setOhlcData]     = useState<OHLCPoint[]>([]);
@@ -66,7 +66,6 @@ export default function AIAnalysis() {
   const [result,      setResult]      = useState<SmartAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // ── Fetch OHLC ─────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -82,7 +81,6 @@ export default function AIAnalysis() {
     return () => { mounted = false; };
   }, [selectedAsset, timeframe]);
 
-  // Reset on asset change
   useEffect(() => {
     setOhlcData([]);
     setResult(null);
@@ -98,7 +96,6 @@ export default function AIAnalysis() {
     const bbArr  = calculateBollingerBands(prices, bbPeriod);
     const sqzArr = calculateSqueezeMomentum(prices, bbPeriod, bbPeriod, 1.5);
 
-    // RSI(14) — computed directly from chart data
     const rsi = (() => {
       const period = 14;
       if (prices.length < period + 1) return null;
@@ -114,7 +111,6 @@ export default function AIAnalysis() {
       return 100 - 100 / (1 + avgGain / avgLoss);
     })();
 
-    // EMA-based trend
     const lastEma = emaArr.findLast(v => v != null) ?? null;
     const lastPrice = prices[prices.length - 1];
     const trend: 'up' | 'down' | 'sideways' = lastEma === null
@@ -148,12 +144,14 @@ export default function AIAnalysis() {
     setIsAnalyzing(true);
     const prices = ohlcData.length ? ohlcData.map(d => d.close) : assetData.chartData.map(d => d.price);
     setTimeout(() => {
-      setResult(runSmartAnalysis(assetData, prices));
+      setResult(runSmartAnalysis(assetData, prices, language as 'es' | 'en'));
       setIsAnalyzing(false);
     }, 700);
   };
 
-  // ── Probability gauge ──────────────────────────────────────────────────────
+  // Reset result when language changes so it re-runs in new language
+  useEffect(() => { setResult(null); }, [language]);
+
   const pct24h = assetData?.changePercent24h ?? 0;
   const rawScore = result
     ? result.signal.score
@@ -163,7 +161,6 @@ export default function AIAnalysis() {
   const bullPct = Math.max(5, Math.min(95, Math.round((rawScore + 100) / 2)));
   const bearPct = 100 - bullPct;
 
-  // ── Signal styling ─────────────────────────────────────────────────────────
   const isPositive  = pct24h >= 0;
   const signalColor = result?.signal.type === 'BUY'
     ? 'text-green-400 bg-green-500/10 border-green-500/30'
@@ -174,17 +171,18 @@ export default function AIAnalysis() {
   const SignalIcon = result?.indicadores.trend === 'up' ? TrendingUp
     : result?.indicadores.trend === 'down' ? TrendingDown : Minus;
 
-  const indRes = result?.indicadores;
-
   const sections = result ? [
-    { icon: '📊', title: 'Situación Actual',   text: result.situacion         },
-    { icon: '🔴', title: 'Resistencias Clave', text: result.resistencias      },
-    { icon: '🟢', title: 'Soportes Clave',     text: result.soportes          },
-    { icon: '📈', title: 'Escenario Alcista',  text: result.escenarioAlcista  },
-    { icon: '📉', title: 'Escenario Bajista',  text: result.escenarioBajista  },
-    { icon: '⚡', title: 'Señal de Trading',   text: result.signal.label      },
-    { icon: '⚠️', title: 'Gestión de Riesgo', text: result.riesgo            },
+    { icon: '📊', title: t('sae.s0'), text: result.situacion         },
+    { icon: '🔴', title: t('sae.s1'), text: result.resistencias      },
+    { icon: '🟢', title: t('sae.s2'), text: result.soportes          },
+    { icon: '📈', title: t('sae.s3'), text: result.escenarioAlcista  },
+    { icon: '📉', title: t('sae.s4'), text: result.escenarioBajista  },
+    { icon: '⚡', title: t('sae.s5'), text: result.signal.label      },
+    { icon: '⚠️', title: t('sae.s6'), text: result.riesgo            },
   ] : [];
+
+  const trendVal = ind.trend === 'up' ? t('sae.up') : ind.trend === 'down' ? t('sae.down') : (ohlcData.length ? t('sae.sideways') : '…');
+  const trendColor = ind.trend === 'up' ? 'text-green-400' : ind.trend === 'down' ? 'text-red-400' : 'text-muted-foreground';
 
   return (
     <div className="flex-1 pb-24 overflow-y-auto">
@@ -201,7 +199,7 @@ export default function AIAnalysis() {
                 Smart Analysis
                 <Badge className="text-[9px] bg-violet-500/15 text-violet-300 border-violet-500/30 font-mono">SAE v1</Badge>
               </h1>
-              <p className="text-[10px] text-muted-foreground">Engine · 100% algorítmico</p>
+              <p className="text-[10px] text-muted-foreground">{t('sae.subtitle')}</p>
             </div>
           </div>
           <div className="text-right">
@@ -225,9 +223,7 @@ export default function AIAnalysis() {
             { label: 'RSI (14)',
               val: ind.rsi != null ? ind.rsi.toFixed(0) : (ohlcData.length ? '--' : '…'),
               color: ind.rsi != null ? (ind.rsi > 70 ? 'text-red-400' : ind.rsi < 30 ? 'text-green-400' : 'text-foreground') : 'text-muted-foreground' },
-            { label: 'EMA Tendencia',
-              val: ind.trend === 'up' ? '↑ Alcista' : ind.trend === 'down' ? '↓ Bajista' : (ohlcData.length ? '→ Lateral' : '…'),
-              color: ind.trend === 'up' ? 'text-green-400' : ind.trend === 'down' ? 'text-red-400' : 'text-muted-foreground' },
+            { label: t('sae.emaTrend'), val: trendVal, color: trendColor },
           ].map(({ label, val, color }) => (
             <div key={label} className="bg-card border border-border rounded-xl p-2.5 text-center">
               <div className="text-[10px] text-muted-foreground mb-0.5">{label}</div>
@@ -242,7 +238,7 @@ export default function AIAnalysis() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-violet-400" />
-                Probabilidad Radar
+                {t('sae.radarProb')}
               </span>
               <span className="text-[10px] text-muted-foreground font-mono">
                 {result ? 'SAE score' : 'Radar score'}
@@ -250,8 +246,8 @@ export default function AIAnalysis() {
             </div>
             <div className="space-y-2">
               {([
-                { icon: TrendingUp,   pct: bullPct, label: 'ALCISTA', col: 'from-green-500/80 to-green-400', textCol: 'text-green-400' },
-                { icon: TrendingDown, pct: bearPct, label: 'BAJISTA', col: 'from-red-500/80 to-red-400',     textCol: 'text-red-400'   },
+                { icon: TrendingUp,   pct: bullPct, label: t('bias.bullish'), col: 'from-green-500/80 to-green-400', textCol: 'text-green-400' },
+                { icon: TrendingDown, pct: bearPct, label: t('bias.bearish'), col: 'from-red-500/80 to-red-400',     textCol: 'text-red-400'   },
               ] as const).map(({ icon: Icon, pct, label, col, textCol }) => (
                 <div key={label} className="flex items-center gap-2">
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${textCol}`} />
@@ -267,7 +263,7 @@ export default function AIAnalysis() {
                       </span>
                     )}
                   </div>
-                  <span className={`text-xs font-bold w-12 shrink-0 ${textCol}`}>{label}</span>
+                  <span className={`text-xs font-bold w-14 shrink-0 ${textCol}`}>{label}</span>
                 </div>
               ))}
             </div>
@@ -277,7 +273,6 @@ export default function AIAnalysis() {
         {/* ── Chart card ────────────────────────────────────────── */}
         <Card className="bg-[#080b10] border-border/60 rounded-2xl overflow-hidden shadow-xl">
           <div className="p-3 pb-2 border-b border-border/20 flex items-center justify-between flex-wrap gap-2">
-            {/* Timeframes */}
             <div className="flex gap-0.5">
               {TIMEFRAMES.map(tf => (
                 <Button key={tf} variant="ghost" size="sm" onClick={() => setTimeframe(tf)}
@@ -290,12 +285,11 @@ export default function AIAnalysis() {
                 </Button>
               ))}
             </div>
-            {/* Indicator toggles */}
             <div className="flex gap-1">
               {[
                 { key: 'ema', label: 'EMA(50)', active: showEMA, toggle: () => setShowEMA(v => !v), aCol: 'text-orange-400', aBg: 'bg-orange-500/15 border-orange-500/40' },
-                { key: 'bb',  label: 'BB',  active: showBB,  toggle: () => setShowBB(v => !v),  aCol: 'text-blue-400',   aBg: 'bg-blue-500/15 border-blue-500/40'     },
-                { key: 'sqz', label: 'SQZ', active: showSQZ, toggle: () => setShowSQZ(v => !v), aCol: 'text-purple-400', aBg: 'bg-purple-500/15 border-purple-500/40' },
+                { key: 'bb',  label: 'BB',       active: showBB,  toggle: () => setShowBB(v => !v),  aCol: 'text-blue-400',   aBg: 'bg-blue-500/15 border-blue-500/40'     },
+                { key: 'sqz', label: 'SQZ',      active: showSQZ, toggle: () => setShowSQZ(v => !v), aCol: 'text-purple-400', aBg: 'bg-purple-500/15 border-purple-500/40' },
               ].map(({ key, label, active, toggle, aCol, aBg }) => (
                 <Button key={key} variant="outline" size="sm" onClick={toggle}
                   className={`h-7 px-2 text-[10px] font-bold gap-1 transition-all ${active ? `${aCol} ${aBg}` : 'text-muted-foreground/50 border-border/30'}`}>
@@ -311,21 +305,20 @@ export default function AIAnalysis() {
               <div className="absolute inset-0 z-20 bg-[#080b10]/80 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-6 h-6 rounded-full border-2 border-violet-500/20 border-t-violet-400 animate-spin" />
-                  <span className="text-[10px] text-muted-foreground">Cargando {TF_LABELS[timeframe]}…</span>
+                  <span className="text-[10px] text-muted-foreground">{t('sae.loading')} {TF_LABELS[timeframe]}…</span>
                 </div>
               </div>
             )}
             {chartError && !loadingChart && (
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3">
-                <span className="text-muted-foreground text-sm">Sin datos disponibles</span>
+                <span className="text-muted-foreground text-sm">{t('sae.noData')}</span>
                 <Button variant="outline" size="sm" className="h-7 text-xs"
                   onClick={() => { setChartError(false); setTimeframe(tf => tf); }}>
-                  <RefreshCw className="w-3 h-3 mr-1" /> Reintentar
+                  <RefreshCw className="w-3 h-3 mr-1" /> {t('sae.retry')}
                 </Button>
               </div>
             )}
 
-            {/* Main candle chart — recharts for axes/grid/tooltip + CandleCanvas for rendering */}
             <div style={{ height: showSQZ ? 235 : 275 }} className="w-full pt-3 pr-1 relative">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={ohlcData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
@@ -336,7 +329,6 @@ export default function AIAnalysis() {
                   <YAxis domain={[ohlcMin, ohlcMax]} axisLine={false} tickLine={false}
                     tickFormatter={fmtY} tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.3)' }}
                     orientation="right" width={54} />
-                  {/* Invisible line: gives recharts data for tooltip */}
                   <Tooltip content={<CandleTooltip />} />
                   <Line dataKey="close" stroke="transparent" dot={false}
                     legendType="none" isAnimationActive={false} />
@@ -352,7 +344,6 @@ export default function AIAnalysis() {
                 </ComposedChart>
               </ResponsiveContainer>
 
-              {/* Canvas overlay — actual candles drawn here */}
               <CandleCanvas
                 data={ohlcData}
                 yMin={ohlcMin} yMax={ohlcMax}
@@ -362,7 +353,6 @@ export default function AIAnalysis() {
               />
             </div>
 
-            {/* SQZ sub-panel — standard recharts Bar */}
             {showSQZ && ohlcData.length > 0 && (
               <div style={{ height: 52 }} className="w-full pr-[58px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -380,7 +370,6 @@ export default function AIAnalysis() {
               </div>
             )}
 
-            {/* Legend */}
             <div className="px-3 pb-3 flex items-center gap-3 flex-wrap">
               {showEMA && <span className="flex items-center gap-1 text-[9px] text-orange-400/70"><span className="w-3 h-0.5 bg-orange-400 inline-block rounded" />EMA(50)</span>}
               {showBB  && <span className="flex items-center gap-1 text-[9px] text-blue-400/70"><span className="w-3 h-0.5 bg-blue-400 inline-block rounded" style={{borderBottom:'1px dashed'}} />BB(20)</span>}
@@ -404,8 +393,8 @@ export default function AIAnalysis() {
               onClick={handleAnalyze} disabled={isAnalyzing}
             >
               {isAnalyzing
-                ? <><RefreshCw className="w-4 h-4 animate-spin" /> Analizando…</>
-                : <><BrainCircuit className="w-4 h-4" /> Analizar {selectedAsset}</>
+                ? <><RefreshCw className="w-4 h-4 animate-spin" /> {t('sae.analyzing')}</>
+                : <><BrainCircuit className="w-4 h-4" /> {t('sae.analyze')} {selectedAsset}</>
               }
             </Button>
 
@@ -414,7 +403,10 @@ export default function AIAnalysis() {
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                   <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border font-bold text-sm ${signalColor}`}>
                     <SignalIcon className="w-4 h-4 shrink-0" />
-                    <span>{result.signal.type === 'BUY' ? 'COMPRA' : result.signal.type === 'SELL' ? 'VENTA' : 'ESPERAR'}</span>
+                    <span>
+                      {result.signal.type === 'BUY'  ? t('sae.buy')  :
+                       result.signal.type === 'SELL' ? t('sae.sell') : t('sae.wait')}
+                    </span>
                     <span className="ml-auto font-mono text-xs opacity-80">Score {result.signal.score.toFixed(0)}/100</span>
                   </div>
                   <div className="space-y-3">
@@ -433,14 +425,14 @@ export default function AIAnalysis() {
 
             {!result && !isAnalyzing && (
               <p className="text-xs text-muted-foreground text-center py-2">
-                Pulsa para análisis técnico completo basado en EMA50, Bollinger Bands, RSI y Squeeze Momentum.
+                {t('sae.hint')}
               </p>
             )}
           </CardContent>
         </Card>
 
         <p className="text-[10px] text-muted-foreground/40 text-center">
-          Análisis algorítmico · No es asesoramiento financiero
+          {t('sae.footer')}
         </p>
       </motion.div>
     </div>

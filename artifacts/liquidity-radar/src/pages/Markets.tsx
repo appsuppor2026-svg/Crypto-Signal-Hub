@@ -9,6 +9,7 @@ import { useAsset } from "@/context/AssetContext";
 import { useAssetData } from "@/hooks/useAssetData";
 import { fetchCoinPrice } from "@/services/cryptoService";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/i18n";
 import {
   Swords, TrendingUp, TrendingDown, Trophy, Clock, History,
   ChevronDown, ChevronUp, Wallet, CalendarDays, ShieldAlert,
@@ -71,15 +72,21 @@ function filterPeriodStart(filter: HistoryFilter): number {
   if (filter === 'month')  return now - 30 * 24 * 3600_000;
   return 0;
 }
-const FILTER_LABELS: Record<HistoryFilter, string> = {
-  today: 'Hoy', week: 'Semana', month: 'Mes', all: 'Todo',
-};
+// FILTER_LABELS is built dynamically inside component using t() — see filterLabels variable
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Markets() {
   const { selectedAsset } = useAsset();
   const { assetData }     = useAssetData(selectedAsset);
   const { toast }         = useToast();
+  const { t }             = useTranslation();
+
+  const filterLabels: Record<HistoryFilter, string> = {
+    today: t('arena.filter.today'),
+    week:  t('arena.filter.week'),
+    month: t('arena.filter.month'),
+    all:   t('arena.filter.all'),
+  };
 
   const [positions, setPositions] = useState<SimPosition[]>([]);
   const [history, setHistory]     = useState<ClosedTrade[]>([]);
@@ -288,11 +295,11 @@ export default function Markets() {
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight">CryptoArena</h1>
-              <p className="text-[10px] text-muted-foreground">Simulador · Liquidity Radar Crypto</p>
+              <p className="text-[10px] text-muted-foreground">{t('arena.simulator')}</p>
             </div>
           </div>
           <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] font-bold tracking-wider">
-            SIN RIESGO REAL
+            {t('arena.noRisk')}
           </Badge>
         </div>
 
@@ -302,10 +309,10 @@ export default function Markets() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-primary" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cuenta USDLDR</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('arena.account')}</span>
               </div>
               <button onClick={handleReset} className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-                Resetear
+                {t('arena.reset')}
               </button>
             </div>
             <div className={`text-3xl font-mono font-bold tracking-tight ${balanceColor}`}>
@@ -313,10 +320,10 @@ export default function Markets() {
               <span className="text-base ml-1 font-semibold opacity-70">USDLDR</span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-              <div><div className="text-muted-foreground mb-0.5">Disponible</div><div className="font-mono font-medium">{availableBalance.toFixed(2)}</div></div>
-              <div><div className="text-muted-foreground mb-0.5">Reservado</div><div className="font-mono font-medium text-amber-400">{reservedCapital.toFixed(2)}</div></div>
+              <div><div className="text-muted-foreground mb-0.5">{t('arena.available')}</div><div className="font-mono font-medium">{availableBalance.toFixed(2)}</div></div>
+              <div><div className="text-muted-foreground mb-0.5">{t('arena.reserved')}</div><div className="font-mono font-medium text-amber-400">{reservedCapital.toFixed(2)}</div></div>
               <div>
-                <div className="text-muted-foreground mb-0.5">P&L Total</div>
+                <div className="text-muted-foreground mb-0.5">{t('arena.pnlTotal')}</div>
                 <div className={`font-mono font-medium ${allTimePnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {allTimePnL >= 0 ? '+' : ''}{allTimePnL.toFixed(2)}
                 </div>
@@ -337,7 +344,7 @@ export default function Markets() {
         {/* New position form */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-3 pt-4 px-4">
-            <CardTitle className="text-base">Nueva Posición</CardTitle>
+            <CardTitle className="text-base">{t('arena.newPosition')}</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-4">
             {/* Direction */}
@@ -357,8 +364,8 @@ export default function Markets() {
             {/* Capital */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Capital (USDLDR)</span>
-                <span className="font-mono font-medium text-muted-foreground">Disponible: {availableBalance.toFixed(2)}</span>
+                <span className="text-muted-foreground">{t('arena.capital')}</span>
+                <span className="font-mono font-medium text-muted-foreground">{t('arena.available')}: {availableBalance.toFixed(2)}</span>
               </div>
               <Input type="number" value={capitalStr} onChange={e => setCapitalStr(e.target.value)}
                 className={`font-mono text-base h-10 ${capital > availableBalance ? 'border-red-500/50' : ''}`}
@@ -377,7 +384,7 @@ export default function Markets() {
             {/* Leverage */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Apalancamiento</span>
+                <span className="text-muted-foreground">{t('arena.leverage')}</span>
                 <span className={`font-mono font-bold ${leverage >= 25 ? 'text-red-400' : leverage >= 10 ? 'text-amber-400' : 'text-green-400'}`}>
                   {leverage}x
                 </span>
@@ -446,7 +453,7 @@ export default function Markets() {
                         </div>
                         {slEnabled && (
                           <div className="text-[10px] text-muted-foreground/60 pl-14">
-                            {direction === 'long' ? '↓ Cierra automático si baja a este precio' : '↑ Cierra automático si sube a este precio'}
+                            {direction === 'long' ? t('arena.sl.longDesc') : t('arena.sl.shortDesc')}
                           </div>
                         )}
                       </div>
@@ -476,7 +483,7 @@ export default function Markets() {
                         </div>
                         {tpEnabled && (
                           <div className="text-[10px] text-muted-foreground/60 pl-14">
-                            {direction === 'long' ? '↑ Cierra automático al alcanzar este precio' : '↓ Cierra automático al alcanzar este precio'}
+                            {direction === 'long' ? t('arena.tp.longDesc') : t('arena.tp.shortDesc')}
                           </div>
                         )}
                       </div>
@@ -489,15 +496,15 @@ export default function Markets() {
             {/* Summary */}
             <div className="bg-muted/40 rounded-xl p-3 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Posición total</span>
+                <span className="text-muted-foreground">{t('arena.totalPos')}</span>
                 <span className="font-mono font-medium">{(capital * leverage).toFixed(2)} USDLDR</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Precio entrada</span>
+                <span className="text-muted-foreground">{t('arena.entryPrice')}</span>
                 <span className="font-mono">{formatPrice(currentPrice)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Liquidación</span>
+                <span className="text-muted-foreground">{t('arena.liquidation')}</span>
                 <span className="font-mono text-red-400">{formatPrice(liquidationPrice)}</span>
               </div>
               {slEnabled && slPrice > 0 && (
@@ -513,7 +520,7 @@ export default function Markets() {
                 </div>
               )}
               <div className="flex justify-between border-t border-border/30 pt-2">
-                <span className="text-muted-foreground">Comisión est.</span>
+                <span className="text-muted-foreground">{t('arena.commission')}</span>
                 <span className="font-mono text-muted-foreground">{estimatedFee.toFixed(3)} USDLDR</span>
               </div>
             </div>
@@ -525,14 +532,14 @@ export default function Markets() {
               onClick={handleOpen}
               disabled={capital <= 0 || capital > availableBalance || !currentPrice || balance <= 0}
             >
-              {balance <= 0 ? '⛔ SALDO AGOTADO'
-                : capital > availableBalance ? '⚠️ SALDO INSUFICIENTE'
-                : direction === 'long' ? '⚔️ ABRIR LONG' : '⚔️ ABRIR SHORT'}
+              {balance <= 0 ? t('arena.noBalance')
+                : capital > availableBalance ? t('arena.insufficientBal')
+                : direction === 'long' ? t('arena.openLong') : t('arena.openShort')}
             </Button>
 
             {balance <= 0 && (
               <button onClick={handleReset} className="w-full text-xs text-primary hover:underline py-1">
-                Resetear cuenta a 10.000 USDLDR
+                {t('arena.resetFull')}
               </button>
             )}
           </CardContent>
@@ -541,12 +548,12 @@ export default function Markets() {
         {/* Open positions */}
         <div className="space-y-2">
           <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider px-1">
-            Posiciones Abiertas ({positions.length})
+            {t('arena.openPositions')} ({positions.length})
           </h3>
           {positions.length === 0 ? (
             <div className="text-center py-6 border border-dashed border-border/40 rounded-xl text-muted-foreground text-sm">
               <Swords className="w-8 h-8 mx-auto mb-2 opacity-20" />
-              No tienes posiciones abiertas
+              {t('arena.noOpenPos')}
             </div>
           ) : positions.map(pos => {
             const pnl      = calculatePnL(pos);
@@ -577,9 +584,9 @@ export default function Markets() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 text-xs bg-muted/30 rounded-lg p-2.5">
-                      <div><div className="text-muted-foreground mb-0.5">Entrada</div><div className="font-mono text-[11px]">{formatPrice(pos.entryPrice)}</div></div>
-                      <div><div className="text-muted-foreground mb-0.5">Actual</div><div className="font-mono text-[11px]">{formatPrice(currentP)}</div></div>
-                      <div><div className="text-muted-foreground mb-0.5">Duración</div><div className="font-mono text-[11px] flex items-center gap-0.5"><Clock className="w-3 h-3" />{formatDuration(Date.now() - pos.openedAt)}</div></div>
+                      <div><div className="text-muted-foreground mb-0.5">{t('arena.entry')}</div><div className="font-mono text-[11px]">{formatPrice(pos.entryPrice)}</div></div>
+                      <div><div className="text-muted-foreground mb-0.5">{t('arena.current')}</div><div className="font-mono text-[11px]">{formatPrice(currentP)}</div></div>
+                      <div><div className="text-muted-foreground mb-0.5">{t('arena.duration')}</div><div className="font-mono text-[11px] flex items-center gap-0.5"><Clock className="w-3 h-3" />{formatDuration(Date.now() - pos.openedAt)}</div></div>
                     </div>
 
                     {/* SL / TP badges */}
@@ -600,11 +607,11 @@ export default function Markets() {
 
                     {isWarning && (
                       <div className="text-[11px] text-red-400 font-bold text-center bg-red-500/10 rounded-lg py-1.5 animate-pulse">
-                        ⚠️ Peligro de liquidación — cierra pronto
+                        {t('arena.liqWarning')}
                       </div>
                     )}
                     <Button variant="outline" className="w-full h-8 text-sm font-medium" onClick={() => closePosition(pos.id)}>
-                      Cerrar Posición
+                      {t('arena.closePos')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -618,7 +625,7 @@ export default function Markets() {
           <button className="w-full flex items-center justify-between px-1 py-1" onClick={() => setShowHistory(!showHistory)}>
             <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <History className="w-4 h-4" />
-              Historial ({filteredHistory.length}{histFilter !== 'all' ? ` / ${history.length}` : ''})
+              {t('arena.history')} ({filteredHistory.length}{histFilter !== 'all' ? ` / ${history.length}` : ''})
             </h3>
             {showHistory ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
           </button>
@@ -630,11 +637,11 @@ export default function Markets() {
                 {/* Filter bar */}
                 <div className="flex items-center gap-1">
                   <CalendarDays className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  {(Object.keys(FILTER_LABELS) as HistoryFilter[]).map(f => (
+                  {(Object.keys(filterLabels) as HistoryFilter[]).map(f => (
                     <Button key={f} variant="ghost" size="sm"
                       className={`h-7 px-3 text-xs flex-1 ${histFilter === f ? 'bg-primary/15 text-primary font-bold border border-primary/20' : 'text-muted-foreground'}`}
                       onClick={() => setHistFilter(f)}>
-                      {FILTER_LABELS[f]}
+                      {filterLabels[f]}
                     </Button>
                   ))}
                 </div>
@@ -644,7 +651,7 @@ export default function Markets() {
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-card border border-border rounded-xl p-3 text-center">
                       <div className="text-lg font-bold font-mono">{filteredHistory.length}</div>
-                      <div className="text-[10px] text-muted-foreground">Ops.</div>
+                      <div className="text-[10px] text-muted-foreground">{t('arena.ops')}</div>
                     </div>
                     <div className="bg-card border border-border rounded-xl p-3 text-center">
                       <div className={`text-lg font-bold font-mono ${winRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>{winRate}%</div>
@@ -662,7 +669,7 @@ export default function Markets() {
                 {filteredHistory.length === 0 ? (
                   <div className="text-center py-6 border border-dashed border-border/40 rounded-xl text-muted-foreground text-sm">
                     <Trophy className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                    {histFilter === 'all' ? 'Aún no has cerrado operaciones' : `Sin operaciones en ${FILTER_LABELS[histFilter].toLowerCase()}`}
+                    {histFilter === 'all' ? t('arena.noTrades') : `${t('arena.noTradesFilter')} ${filterLabels[histFilter].toLowerCase()}`}
                   </div>
                 ) : filteredHistory.map((trade) => {
                   const isProfit = trade.finalPnL >= 0;
