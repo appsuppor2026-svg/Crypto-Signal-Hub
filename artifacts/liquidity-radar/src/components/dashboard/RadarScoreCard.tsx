@@ -89,7 +89,7 @@ export function RadarScoreCard({ asset }: RadarScoreCardProps) {
               {t(`bias.${asset.bias}` as any)}
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              Market Bias Indicator based on liquidity conditions
+              {t('radar.biasDesc')}
             </p>
           </div>
         </div>

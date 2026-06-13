@@ -45,7 +45,8 @@ type HistoryFilter = 'today' | 'week' | 'month' | 'all';
 const STORAGE_POS   = 'lr_sim_positions';
 const STORAGE_HIST  = 'lr_trade_history';
 const STORAGE_BAL   = 'lr_usdldr_balance';
-const INITIAL_BAL   = 10_000;
+const INITIAL_BAL   = 1_000;
+const SIM_CURRENCY  = 'LRC';
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function formatDuration(ms: number): string {
@@ -58,7 +59,7 @@ function formatDuration(ms: number): string {
   return `${Math.floor(h / 24)}d ${h % 24}h`;
 }
 function formatLDR(v: number): string {
-  return `${v >= 0 ? '' : '-'}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDLDR`;
+  return `${v >= 0 ? '' : '-'}${Math.abs(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${SIM_CURRENCY}`;
 }
 function formatPrice(v: number): string {
   return v >= 1
@@ -213,7 +214,7 @@ export default function Markets() {
       const labels = { tp: 'Take Profit!', sl: 'Stop Loss activado', liquidation: 'Liquidado', manual: pnl >= 0 ? 'Ganancia' : 'Pérdida' };
       toast({
         title: `${icons[reason]} ${labels[reason]}`,
-        description: `P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} USDLDR · Saldo: ${newBalance.toFixed(2)} USDLDR`,
+        description: `P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} ${SIM_CURRENCY} · Saldo: ${newBalance.toFixed(2)} ${SIM_CURRENCY}`,
         variant: reason === 'tp' ? 'default' : reason === 'sl' || reason === 'liquidation' ? 'destructive' : pnl >= 0 ? 'default' : 'destructive',
       });
 
@@ -265,13 +266,13 @@ export default function Markets() {
     };
     savePositions([...positions, pos]);
     setCapitalStr('100');
-    toast({ title: '⚔️ Posición abierta', description: `${direction.toUpperCase()} ${leverage}x · ${selectedAsset} · −${capital.toFixed(2)} USDLDR` });
+    toast({ title: '⚔️ Posición abierta', description: `${direction.toUpperCase()} ${leverage}x · ${selectedAsset} · −${capital.toFixed(2)} ${SIM_CURRENCY}` });
   };
 
   const handleReset = () => {
-    if (!confirm('¿Resetear saldo a 10.000 USDLDR y borrar historial?')) return;
+    if (!confirm(`¿Resetear saldo a 1.000 ${SIM_CURRENCY} y borrar historial?`)) return;
     savePositions([]); saveHistory([]); saveBalance(INITIAL_BAL);
-    toast({ title: '🔄 Cuenta reseteada', description: 'Saldo restaurado a 10.000 USDLDR' });
+    toast({ title: '🔄 Cuenta reseteada', description: `Saldo restaurado a 1.000 ${SIM_CURRENCY}` });
   };
 
   // ── History stats ─────────────────────────────────────────────────────────
@@ -317,7 +318,7 @@ export default function Markets() {
             </div>
             <div className={`text-3xl font-mono font-bold tracking-tight ${balanceColor}`}>
               {balance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              <span className="text-base ml-1 font-semibold opacity-70">USDLDR</span>
+              <span className="text-base ml-1 font-semibold opacity-70">{SIM_CURRENCY}</span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
               <div><div className="text-muted-foreground mb-0.5">{t('arena.available')}</div><div className="font-mono font-medium">{availableBalance.toFixed(2)}</div></div>
@@ -497,7 +498,7 @@ export default function Markets() {
             <div className="bg-muted/40 rounded-xl p-3 space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('arena.totalPos')}</span>
-                <span className="font-mono font-medium">{(capital * leverage).toFixed(2)} USDLDR</span>
+                <span className="font-mono font-medium">{(capital * leverage).toFixed(2)} {SIM_CURRENCY}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('arena.entryPrice')}</span>
@@ -521,7 +522,7 @@ export default function Markets() {
               )}
               <div className="flex justify-between border-t border-border/30 pt-2">
                 <span className="text-muted-foreground">{t('arena.commission')}</span>
-                <span className="font-mono text-muted-foreground">{estimatedFee.toFixed(3)} USDLDR</span>
+                <span className="font-mono text-muted-foreground">{estimatedFee.toFixed(3)} {SIM_CURRENCY}</span>
               </div>
             </div>
 
