@@ -1,5 +1,11 @@
+// ── API bases ─────────────────────────────────────────────────────────────────
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
+// Resolve the base path for same-origin API calls through the shared proxy
+const _rawBase = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
+const API_BASE = `${_rawBase}/api`;
+
+// ── Symbol maps ───────────────────────────────────────────────────────────────
 export const SYMBOL_TO_COINGECKO: Record<string, string> = {
   BTC:  'bitcoin',
   ETH:  'ethereum',
@@ -9,6 +15,7 @@ export const SYMBOL_TO_COINGECKO: Record<string, string> = {
   DOGE: 'dogecoin',
 };
 
+// Kraken WS pairs (real-time price streaming)
 export const SYMBOL_TO_KRAKEN: Record<string, string> = {
   BTC:  'BTC/USD',
   ETH:  'ETH/USD',
@@ -18,6 +25,7 @@ export const SYMBOL_TO_KRAKEN: Record<string, string> = {
   DOGE: 'DOGE/USD',
 };
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 export interface CoinGeckoPrice {
   usd: number;
   usd_24h_change: number;
@@ -44,9 +52,10 @@ interface CacheEntry<T> { data: T; ts: number; }
 const _cache    = new Map<string, CacheEntry<unknown>>();
 const _inflight = new Map<string, Promise<unknown>>();
 
-const TTL_MINUTELY = 3 * 60_000;
-const TTL_HOURLY   = 5 * 60_000;
-const TTL_PRICE    = 30_000;
+const TTL_SHORT  = 2 * 60_000;
+const TTL_MEDIUM = 5 * 60_000;
+const TTL_LONG   = 10 * 60_000;
+const TTL_PRICE  = 30_000;
 
 async function withCache<T>(key: string, fetcher: () => Promise<T>, ttl: number): Promise<T> {
   const hit = _cache.get(key) as CacheEntry<T> | undefined;
@@ -71,137 +80,71 @@ async function withCache<T>(key: string, fetcher: () => Promise<T>, ttl: number)
   return promise;
 }
 
-// ── Formatters ────────────────────────────────────────────────────────────────
+// ── Date formatter ────────────────────────────────────────────────────────────
 function fmtTime(ts: number, tf: ChartTimeframe): string {
   const d   = new Date(ts);
   const DAY = ['D','L','M','X','J','V','S'];
   const hh  = d.getHours().toString().padStart(2, '0');
   const mm  = d.getMinutes().toString().padStart(2, '0');
   switch (tf) {
-    case '5M': case '15M': case '1H': case '1D': return `${hh}:${mm}`;
+    case '5M': case '15M': case '1H': return `${hh}:${mm}`;
     case '4H': return `${DAY[d.getDay()]} ${hh}h`;
-    case '7D': return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-    case '1M': return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+    case '1D': case '7D': case '1M':
+      return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
   }
 }
 
-// ── Aggregate prices → OHLC buckets ──────────────────────────────────────────
-function aggregateOHLC(
-  prices: [number, number][],
-  bucketMs: number,
+// ── Fetch OHLCV via our own server proxy (no CORS issues) ─────────────────────
+// API server calls Binance server-side and returns the raw klines array.
+// Binance klines format: [openTime, open, high, low, close, volume, ...]
+async function fetchKlines(
+  symbol: string,
+  interval: string,
+  limit: number,
   tf: ChartTimeframe,
-  maxCandles = 80
-): OHLCPoint[] {
-  if (!prices.length) return [];
-  const map = new Map<number, { o: number; h: number; l: number; c: number }>();
-  for (const [ts, price] of prices) {
-    const key = Math.floor(ts / bucketMs) * bucketMs;
-    const ex  = map.get(key);
-    if (!ex) { map.set(key, { o: price, h: price, l: price, c: price }); }
-    else { ex.h = Math.max(ex.h, price); ex.l = Math.min(ex.l, price); ex.c = price; }
-  }
-  return Array.from(map.entries())
-    .sort(([a], [b]) => a - b)
-    .slice(-maxCandles)
-    .map(([ts, b]) => ({ date: fmtTime(ts, tf), timestamp: ts, open: b.o, high: b.h, low: b.l, close: b.c }));
+  ttl: number
+): Promise<OHLCPoint[]> {
+  return withCache(`klines_${symbol}_${interval}_${limit}`, async () => {
+    const url = `${API_BASE}/market/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) throw new Error(`klines ${res.status}`);
+    const raw: unknown[][] = await res.json();
+    return raw.map(c => ({
+      date:      fmtTime(Number(c[0]), tf),
+      timestamp: Number(c[0]),
+      open:      parseFloat(c[1] as string),
+      high:      parseFloat(c[2] as string),
+      low:       parseFloat(c[3] as string),
+      close:     parseFloat(c[4] as string),
+    }));
+  }, ttl);
 }
 
-// ── Fetch minutely (last 24 h) — cached 3 min ─────────────────────────────────
-async function fetchMinutely(symbol: string): Promise<[number, number][]> {
-  const id = SYMBOL_TO_COINGECKO[symbol];
-  if (!id) return [];
-  return withCache(`minutely_${symbol}`, async () => {
-    const res = await fetch(
-      `${COINGECKO_BASE}/coins/${id}/market_chart?vs_currency=usd&days=1&interval=minutely`,
-      { signal: AbortSignal.timeout(12_000) }
-    );
-    if (!res.ok) throw new Error(`CoinGecko minutely ${res.status}`);
-    const data = await res.json();
-    return (data.prices ?? []) as [number, number][];
-  }, TTL_MINUTELY);
-}
-
-// ── Fetch hourly prices for longer timeframes (free API) — cached 5 min ───────
-async function fetchHourly(symbol: string, days: number): Promise<[number, number][]> {
-  const id = SYMBOL_TO_COINGECKO[symbol];
-  if (!id) return [];
-  return withCache(`hourly_${symbol}_${days}`, async () => {
-    const res = await fetch(
-      `${COINGECKO_BASE}/coins/${id}/market_chart?vs_currency=usd&days=${days}&interval=hourly`,
-      { signal: AbortSignal.timeout(15_000) }
-    );
-    if (!res.ok) throw new Error(`CoinGecko hourly ${res.status}`);
-    const data = await res.json();
-    return (data.prices ?? []) as [number, number][];
-  }, TTL_HOURLY);
-}
-
-// ── Public: fetchOHLCData ─────────────────────────────────────────────────────
-// All timeframes now use free endpoints only (no Pro OHLC)
+// ── Public: fetchOHLCData — all timeframes through the API proxy ──────────────
 export async function fetchOHLCData(symbol: string, timeframe: ChartTimeframe): Promise<OHLCPoint[]> {
   switch (timeframe) {
-    case '5M': {
-      const min = await fetchMinutely(symbol).catch(() => [] as [number,number][]);
-      return aggregateOHLC(min, 5 * 60_000, '5M', 72);
-    }
-    case '15M': {
-      const min = await fetchMinutely(symbol).catch(() => [] as [number,number][]);
-      return aggregateOHLC(min, 15 * 60_000, '15M', 60);
-    }
-    case '1H': {
-      const min = await fetchMinutely(symbol).catch(() => [] as [number,number][]);
-      return aggregateOHLC(min, 60 * 60_000, '1H', 24);
-    }
-    case '4H': {
-      const hr = await fetchHourly(symbol, 14).catch(() => [] as [number,number][]);
-      return aggregateOHLC(hr, 4 * 60 * 60_000, '4H', 60);
-    }
-    case '1D': {
-      const hr = await fetchHourly(symbol, 30).catch(() => [] as [number,number][]);
-      return aggregateOHLC(hr, 24 * 60 * 60_000, '1D', 30);
-    }
-    case '7D': {
-      const hr = await fetchHourly(symbol, 60).catch(() => [] as [number,number][]);
-      return aggregateOHLC(hr, 24 * 60 * 60_000, '7D', 60);
-    }
-    case '1M': {
-      const hr = await fetchHourly(symbol, 90).catch(() => [] as [number,number][]);
-      return aggregateOHLC(hr, 24 * 60 * 60_000, '1M', 90);
-    }
+    case '5M':  return fetchKlines(symbol, '5m',  72, '5M',  TTL_SHORT);
+    case '15M': return fetchKlines(symbol, '15m', 72, '15M', TTL_SHORT);
+    case '1H':  return fetchKlines(symbol, '1h',  48, '1H',  TTL_SHORT);
+    case '4H':  return fetchKlines(symbol, '4h',  60, '4H',  TTL_MEDIUM);
+    case '1D':  return fetchKlines(symbol, '1d',  30, '1D',  TTL_LONG);
+    case '7D':  return fetchKlines(symbol, '1d',  60, '7D',  TTL_LONG);
+    case '1M':  return fetchKlines(symbol, '1d',  90, '1M',  TTL_LONG);
   }
 }
 
-// ── Public: fetchChartDataByTimeframe (line chart) ────────────────────────────
+// ── Public: fetchChartDataByTimeframe — line chart derived from klines ────────
 export async function fetchChartDataByTimeframe(symbol: string, timeframe: ChartTimeframe): Promise<ChartPoint[]> {
-  const id = SYMBOL_TO_COINGECKO[symbol];
-  if (!id) return [];
-
-  if (['5M', '15M', '1H'].includes(timeframe)) {
-    const min = await fetchMinutely(symbol).catch(() => [] as [number,number][]);
-    if (!min.length) return [];
-    const stepMin = timeframe === '5M' ? 5 : timeframe === '15M' ? 15 : 30;
-    return min.filter((_, i) => i % stepMin === 0).map(([ts, price]) => ({ date: fmtTime(ts, timeframe), price }));
-  }
-
-  if (timeframe === '4H') {
-    const hr = await fetchHourly(symbol, 14).catch(() => [] as [number,number][]);
-    return hr.filter((_, i) => i % 4 === 0).map(([ts, price]) => ({ date: fmtTime(ts, '4H'), price }));
-  }
-
-  const cfgMap: Record<string, { days: number }> = {
-    '1D': { days: 30 }, '7D': { days: 60 }, '1M': { days: 90 },
-  };
-  const cfg = cfgMap[timeframe];
-  if (!cfg) return [];
-  const hr = await fetchHourly(symbol, cfg.days).catch(() => [] as [number,number][]);
-  return hr.filter((_, i) => i % 24 === 0).map(([ts, price]) => ({ date: fmtTime(ts, timeframe), price }));
+  const ohlc = await fetchOHLCData(symbol, timeframe).catch(() => [] as OHLCPoint[]);
+  return ohlc.map(c => ({ date: c.date, price: c.close }));
 }
 
+// Alias for useAssetData initial 7D line chart
 export async function fetchChartData(symbol: string): Promise<ChartPoint[]> {
   return fetchChartDataByTimeframe(symbol, '7D');
 }
 
-// ── Public: fetchCoinPrice — cached 30 s ─────────────────────────────────────
+// ── Public: fetchCoinPrice — CoinGecko simple/price, cached 30 s ─────────────
 export async function fetchCoinPrice(symbol: string): Promise<CoinGeckoPrice | null> {
   const id = SYMBOL_TO_COINGECKO[symbol];
   if (!id) return null;
