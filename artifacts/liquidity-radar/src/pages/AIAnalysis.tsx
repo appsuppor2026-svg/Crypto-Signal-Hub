@@ -125,16 +125,17 @@ export default function AIAnalysis() {
   };
 
   // ── Probability gauge ──────────────────────────────────────────────────────
+  const pct24h = assetData?.changePercent24h ?? 0;
   const rawScore = result
     ? result.signal.score
     : Math.max(-80, Math.min(80,
-        ((assetData?.radarScore ?? 50) - 50) * 1.2 + (assetData?.change24h ?? 0) * 2
+        ((assetData?.radarScore ?? 50) - 50) * 1.2 + pct24h * 2
       ));
   const bullPct = Math.max(5, Math.min(95, Math.round((rawScore + 100) / 2)));
   const bearPct = 100 - bullPct;
 
   // ── Signal styling ─────────────────────────────────────────────────────────
-  const isPositive  = (assetData?.change24h ?? 0) >= 0;
+  const isPositive  = pct24h >= 0;
   const signalColor = result?.signal.type === 'BUY'
     ? 'text-green-400 bg-green-500/10 border-green-500/30'
     : result?.signal.type === 'SELL'
@@ -183,7 +184,7 @@ export default function AIAnalysis() {
               })}
             </div>
             <div className={`text-xs font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-              {isPositive ? '▲' : '▼'} {Math.abs(assetData?.change24h ?? 0).toFixed(2)}% 24h
+              {isPositive ? '▲' : '▼'} {Math.abs(pct24h).toFixed(2)}% 24h
             </div>
           </div>
         </div>
