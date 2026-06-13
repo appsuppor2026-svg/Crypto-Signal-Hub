@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,7 +17,7 @@ import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import Support from "@/pages/Support";
 import NotFound from "@/pages/not-found";
-import { DisclaimerModal } from '@/components/modals/DisclaimerModal';
+import { OnboardingModal } from '@/components/modals/OnboardingModal';
 
 const queryClient = new QueryClient();
 
@@ -36,18 +36,29 @@ function Router() {
 }
 
 function App() {
-  const [disclaimerAccepted, setDisclaimerAccepted] = useState(true);
+  const [onboardingDone, setOnboardingDone] = useState(true);
 
   useEffect(() => {
     const accepted = localStorage.getItem('lr_disclaimer_accepted');
     if (accepted !== 'true') {
-      setDisclaimerAccepted(false);
+      setOnboardingDone(false);
     }
   }, []);
 
-  const handleAcceptDisclaimer = () => {
+  const handleOnboardingComplete = (name: string, nickname: string) => {
+    // Persist disclaimer acceptance
     localStorage.setItem('lr_disclaimer_accepted', 'true');
-    setDisclaimerAccepted(true);
+
+    // Save basic profile (merge with any existing data)
+    const existing = localStorage.getItem('lr_user_profile');
+    const profile = existing ? JSON.parse(existing) : {};
+    localStorage.setItem('lr_user_profile', JSON.stringify({
+      ...profile,
+      ...(name     ? { name }     : {}),
+      ...(nickname ? { nickname } : {}),
+    }));
+
+    setOnboardingDone(true);
   };
 
   return (
@@ -56,8 +67,8 @@ function App() {
         <AssetProvider>
           <AlertsProvider>
             <TooltipProvider>
-              {!disclaimerAccepted && (
-                <DisclaimerModal onAccept={handleAcceptDisclaimer} />
+              {!onboardingDone && (
+                <OnboardingModal onComplete={handleOnboardingComplete} />
               )}
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                 <AppLayout>
