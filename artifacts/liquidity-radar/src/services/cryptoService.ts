@@ -123,13 +123,13 @@ async function fetchKlines(
 // ── Public: fetchOHLCData — all timeframes through the API proxy ──────────────
 export async function fetchOHLCData(symbol: string, timeframe: ChartTimeframe): Promise<OHLCPoint[]> {
   switch (timeframe) {
-    case '5M':  return fetchKlines(symbol, '5m',  72, '5M',  TTL_SHORT);
-    case '15M': return fetchKlines(symbol, '15m', 72, '15M', TTL_SHORT);
-    case '1H':  return fetchKlines(symbol, '1h',  48, '1H',  TTL_SHORT);
-    case '4H':  return fetchKlines(symbol, '4h',  60, '4H',  TTL_MEDIUM);
-    case '1D':  return fetchKlines(symbol, '1d',  30, '1D',  TTL_LONG);
-    case '7D':  return fetchKlines(symbol, '1d',  60, '7D',  TTL_LONG);
-    case '1M':  return fetchKlines(symbol, '1d',  90, '1M',  TTL_LONG);
+    case '5M':  return fetchKlines(symbol, '5m',  100, '5M',  TTL_SHORT);
+    case '15M': return fetchKlines(symbol, '15m', 100, '15M', TTL_SHORT);
+    case '1H':  return fetchKlines(symbol, '1h',  100, '1H',  TTL_SHORT);
+    case '4H':  return fetchKlines(symbol, '4h',  100, '4H',  TTL_MEDIUM);
+    case '1D':  return fetchKlines(symbol, '1d',  100, '1D',  TTL_LONG);
+    case '7D':  return fetchKlines(symbol, '1d',  200, '7D',  TTL_LONG);
+    case '1M':  return fetchKlines(symbol, '1d',  200, '1M',  TTL_LONG);
   }
 }
 

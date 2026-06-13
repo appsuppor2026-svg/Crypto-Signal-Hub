@@ -137,7 +137,7 @@ export default function Markets() {
   const liquidationPrice = direction === 'long'
     ? currentPrice * (1 - 1 / leverage)
     : currentPrice * (1 + 1 / leverage);
-  const estimatedFee  = capital * leverage * 0.0004;
+  const estimatedFee  = capital * leverage * 0.0005;
   const reservedCapital = positions.reduce((s, p) => s + p.capital, 0);
   const availableBalance = balance - reservedCapital;
 

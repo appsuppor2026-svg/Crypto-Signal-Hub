@@ -16,9 +16,9 @@ import { CandleCanvas } from './CandleCanvas';
 interface ChartAreaProps { asset: AssetData; }
 type ChartMode = 'line' | 'candles';
 
-const emaPer = (n: number) => Math.min(9,  Math.max(3, Math.floor(n * 0.25)));
-const bbPer  = (n: number) => Math.min(10, Math.max(3, Math.floor(n * 0.25)));
-const sqzPer = (n: number) => Math.min(10, Math.max(3, Math.floor(n * 0.25)));
+const emaPer = (n: number) => Math.min(50, Math.max(5, Math.floor(n * 0.7)));
+const bbPer  = (n: number) => Math.min(20, Math.max(5, Math.floor(n * 0.25)));
+const sqzPer = (n: number) => Math.min(20, Math.max(5, Math.floor(n * 0.25)));
 
 // ── Price label on reference line ─────────────────────────────────────────────
 const PriceLabel = ({ viewBox, price }: any) => {
@@ -177,7 +177,7 @@ export function ChartArea({ asset }: ChartAreaProps) {
         {displayMode === 'candles' && (
           <div className="flex gap-1.5 items-center">
             {([
-              { key: 'EMA', active: showEMA, toggle: () => setShowEMA(v => !v), cls: 'bg-orange-500/20 text-orange-400 border-orange-500/40' },
+              { key: 'EMA(50)', active: showEMA, toggle: () => setShowEMA(v => !v), cls: 'bg-orange-500/20 text-orange-400 border-orange-500/40' },
               { key: 'BB',  active: showBB,  toggle: () => setShowBB(v => !v),  cls: 'bg-blue-500/20 text-blue-400 border-blue-500/40' },
               { key: 'SQZ', active: showSQZ, toggle: () => setShowSQZ(v => !v), cls: 'bg-purple-500/20 text-purple-400 border-purple-500/40' },
             ] as const).map(({ key, active, toggle, cls }) => (
@@ -187,7 +187,7 @@ export function ChartArea({ asset }: ChartAreaProps) {
               </Button>
             ))}
             <span className="ml-auto text-[9px] text-muted-foreground/40 font-mono">
-              {ohlcData.length}v · EMA{emaPer(ohlcData.length)} BB{bbPer(ohlcData.length)}
+              {ohlcData.length}v
             </span>
           </div>
         )}

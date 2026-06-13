@@ -90,17 +90,46 @@ export default function AIAnalysis() {
 
   // ── Indicators ─────────────────────────────────────────────────────────────
   const ind = useMemo(() => {
-    if (!ohlcData.length) return { ema: [], bbU: [], bbL: [], sqz: [] };
+    if (!ohlcData.length) return { ema: [], bbU: [], bbL: [], sqz: [], rsi: null as number | null, trend: 'sideways' as 'up' | 'down' | 'sideways' };
     const prices = ohlcData.map(d => d.close);
-    const period = Math.min(20, prices.length);
-    const emaArr = calculateEMA(prices, Math.min(50, prices.length));
-    const bbArr  = calculateBollingerBands(prices, period);
-    const sqzArr = calculateSqueezeMomentum(prices, period, period, 1.5);
+    const emaPeriod = Math.min(50, Math.floor(prices.length * 0.7));
+    const bbPeriod  = Math.min(20, prices.length);
+    const emaArr = calculateEMA(prices, emaPeriod);
+    const bbArr  = calculateBollingerBands(prices, bbPeriod);
+    const sqzArr = calculateSqueezeMomentum(prices, bbPeriod, bbPeriod, 1.5);
+
+    // RSI(14) — computed directly from chart data
+    const rsi = (() => {
+      const period = 14;
+      if (prices.length < period + 1) return null;
+      const slice = prices.slice(-period - 1);
+      let gains = 0, losses = 0;
+      for (let i = 1; i < slice.length; i++) {
+        const diff = slice[i] - slice[i - 1];
+        if (diff > 0) gains += diff; else losses -= diff;
+      }
+      const avgGain = gains / period;
+      const avgLoss = losses / period;
+      if (avgLoss === 0) return 100;
+      return 100 - 100 / (1 + avgGain / avgLoss);
+    })();
+
+    // EMA-based trend
+    const lastEma = emaArr.findLast(v => v != null) ?? null;
+    const lastPrice = prices[prices.length - 1];
+    const trend: 'up' | 'down' | 'sideways' = lastEma === null
+      ? 'sideways'
+      : lastPrice > lastEma * 1.002 ? 'up'
+      : lastPrice < lastEma * 0.998 ? 'down'
+      : 'sideways';
+
     return {
       ema: emaArr,
       bbU: bbArr.map(b => b.upper),
       bbL: bbArr.map(b => b.lower),
       sqz: sqzArr.map(s => s.momentum),
+      rsi,
+      trend,
     };
   }, [ohlcData]);
 
@@ -193,11 +222,12 @@ export default function AIAnalysis() {
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: 'Radar Score', val: assetData?.radarScore ?? '--', color: 'text-primary' },
-            { label: 'RSI (14)',    val: indRes?.rsi ? indRes.rsi.toFixed(0) : '--',
-              color: indRes?.rsi ? (indRes.rsi > 70 ? 'text-red-400' : indRes.rsi < 30 ? 'text-green-400' : 'text-foreground') : 'text-foreground' },
-            { label: 'Tendencia',
-              val: indRes?.trend === 'up' ? '↑ Alcista' : indRes?.trend === 'down' ? '↓ Bajista' : '→ Lateral',
-              color: indRes?.trend === 'up' ? 'text-green-400' : indRes?.trend === 'down' ? 'text-red-400' : 'text-muted-foreground' },
+            { label: 'RSI (14)',
+              val: ind.rsi != null ? ind.rsi.toFixed(0) : (ohlcData.length ? '--' : '…'),
+              color: ind.rsi != null ? (ind.rsi > 70 ? 'text-red-400' : ind.rsi < 30 ? 'text-green-400' : 'text-foreground') : 'text-muted-foreground' },
+            { label: 'EMA Tendencia',
+              val: ind.trend === 'up' ? '↑ Alcista' : ind.trend === 'down' ? '↓ Bajista' : (ohlcData.length ? '→ Lateral' : '…'),
+              color: ind.trend === 'up' ? 'text-green-400' : ind.trend === 'down' ? 'text-red-400' : 'text-muted-foreground' },
           ].map(({ label, val, color }) => (
             <div key={label} className="bg-card border border-border rounded-xl p-2.5 text-center">
               <div className="text-[10px] text-muted-foreground mb-0.5">{label}</div>
@@ -212,10 +242,10 @@ export default function AIAnalysis() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-violet-400" />
-                Probabilidad Direccional
+                Probabilidad Radar
               </span>
               <span className="text-[10px] text-muted-foreground font-mono">
-                {result ? 'SAE score' : 'Indicativo'}
+                {result ? 'SAE score' : 'Radar score'}
               </span>
             </div>
             <div className="space-y-2">
@@ -263,7 +293,7 @@ export default function AIAnalysis() {
             {/* Indicator toggles */}
             <div className="flex gap-1">
               {[
-                { key: 'ema', label: 'EMA', active: showEMA, toggle: () => setShowEMA(v => !v), aCol: 'text-orange-400', aBg: 'bg-orange-500/15 border-orange-500/40' },
+                { key: 'ema', label: 'EMA(50)', active: showEMA, toggle: () => setShowEMA(v => !v), aCol: 'text-orange-400', aBg: 'bg-orange-500/15 border-orange-500/40' },
                 { key: 'bb',  label: 'BB',  active: showBB,  toggle: () => setShowBB(v => !v),  aCol: 'text-blue-400',   aBg: 'bg-blue-500/15 border-blue-500/40'     },
                 { key: 'sqz', label: 'SQZ', active: showSQZ, toggle: () => setShowSQZ(v => !v), aCol: 'text-purple-400', aBg: 'bg-purple-500/15 border-purple-500/40' },
               ].map(({ key, label, active, toggle, aCol, aBg }) => (
@@ -352,7 +382,7 @@ export default function AIAnalysis() {
 
             {/* Legend */}
             <div className="px-3 pb-3 flex items-center gap-3 flex-wrap">
-              {showEMA && <span className="flex items-center gap-1 text-[9px] text-orange-400/70"><span className="w-3 h-0.5 bg-orange-400 inline-block rounded" />EMA</span>}
+              {showEMA && <span className="flex items-center gap-1 text-[9px] text-orange-400/70"><span className="w-3 h-0.5 bg-orange-400 inline-block rounded" />EMA(50)</span>}
               {showBB  && <span className="flex items-center gap-1 text-[9px] text-blue-400/70"><span className="w-3 h-0.5 bg-blue-400 inline-block rounded" style={{borderBottom:'1px dashed'}} />BB(20)</span>}
               {showSQZ && <span className="flex items-center gap-1 text-[9px] text-purple-400/70"><span className="w-2 h-2 bg-purple-400 inline-block rounded-sm" />SQZ</span>}
             </div>
