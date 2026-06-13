@@ -7,7 +7,8 @@ import {
   SYMBOL_TO_KRAKEN,
 } from '@/services/cryptoService';
 import { computeZones } from '@/services/liquidityZones';
-import { useAlerts } from '@/context/AlertsContext';
+import { useAlerts, AssetSnapshot } from '@/context/AlertsContext';
+import { useToast } from '@/hooks/use-toast';
 
 export type DataStatus = 'loading' | 'live' | 'polling' | 'mock';
 
@@ -17,7 +18,9 @@ export function useAssetData(symbol: string) {
   const wsRef = useRef<WebSocket | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
-  const { checkAlerts } = useAlerts();
+  const prevSnapshotRef = useRef<AssetSnapshot | null>(null);
+  const { checkAlerts, checkSmartAlerts } = useAlerts();
+  const { toast } = useToast();
 
   const applyPrice = useCallback(
     (price: number, change24h: number, changePercent24h: number) => {
@@ -32,6 +35,35 @@ export function useAssetData(symbol: string) {
     },
     [checkAlerts, symbol]
   );
+
+  // Check smart alerts whenever relevant asset data changes
+  useEffect(() => {
+    const snapshot: AssetSnapshot = {
+      symbol: assetData.symbol,
+      radarScore: assetData.radarScore,
+      bias: assetData.bias,
+      upperZoneAmount: assetData.upperZone.amount,
+      lowerZoneAmount: assetData.lowerZone.amount,
+    };
+
+    const triggered = checkSmartAlerts(prevSnapshotRef.current, snapshot);
+    triggered.forEach(({ title, body }) => {
+      toast({ title, description: body });
+    });
+    prevSnapshotRef.current = snapshot;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    assetData.symbol,
+    assetData.radarScore,
+    assetData.bias,
+    assetData.upperZone.amount,
+    assetData.lowerZone.amount,
+  ]);
+
+  // Reset prev snapshot when symbol changes
+  useEffect(() => {
+    prevSnapshotRef.current = null;
+  }, [symbol]);
 
   // Initial fetch: price + chart from CoinGecko
   useEffect(() => {
