@@ -210,11 +210,15 @@ export default function Markets() {
         return updated;
       });
 
-      const icons = { tp: '🎯', sl: '🛑', liquidation: '💀', manual: pnl >= 0 ? '🏆' : '💸' };
-      const labels = { tp: 'Take Profit!', sl: 'Stop Loss activado', liquidation: 'Liquidado', manual: pnl >= 0 ? 'Ganancia' : 'Pérdida' };
+      const toastTitles = {
+        tp: t('arena.toast.tp'),
+        sl: t('arena.toast.sl'),
+        liquidation: t('arena.toast.liquidated'),
+        manual: pnl >= 0 ? t('arena.toast.profit') : t('arena.toast.loss'),
+      };
       toast({
-        title: `${icons[reason]} ${labels[reason]}`,
-        description: `P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} ${SIM_CURRENCY} · Saldo: ${newBalance.toFixed(2)} ${SIM_CURRENCY}`,
+        title: toastTitles[reason],
+        description: `P&L: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} ${SIM_CURRENCY} · ${t('arena.account')}: ${newBalance.toFixed(2)} ${SIM_CURRENCY}`,
         variant: reason === 'tp' ? 'default' : reason === 'sl' || reason === 'liquidation' ? 'destructive' : pnl >= 0 ? 'default' : 'destructive',
       });
 
@@ -253,7 +257,7 @@ export default function Markets() {
   const handleOpen = () => {
     if (capital <= 0 || !currentPrice) return;
     if (capital > availableBalance) {
-      toast({ title: 'Saldo insuficiente', description: `Disponible: ${formatLDR(availableBalance)}`, variant: 'destructive' });
+      toast({ title: t('arena.toast.insufficientFunds'), description: `${t('arena.toast.insufficientDesc')} ${formatLDR(availableBalance)}`, variant: 'destructive' });
       return;
     }
     const pos: SimPosition = {
@@ -266,13 +270,13 @@ export default function Markets() {
     };
     savePositions([...positions, pos]);
     setCapitalStr('100');
-    toast({ title: '⚔️ Posición abierta', description: `${direction.toUpperCase()} ${leverage}x · ${selectedAsset} · −${capital.toFixed(2)} ${SIM_CURRENCY}` });
+    toast({ title: t('arena.toast.posOpened'), description: `${direction.toUpperCase()} ${leverage}x · ${selectedAsset} · −${capital.toFixed(2)} ${SIM_CURRENCY}` });
   };
 
   const handleReset = () => {
-    if (!confirm(`¿Resetear saldo a 1.000 ${SIM_CURRENCY} y borrar historial?`)) return;
+    if (!confirm(t('arena.toast.confirmReset'))) return;
     savePositions([]); saveHistory([]); saveBalance(INITIAL_BAL);
-    toast({ title: '🔄 Cuenta reseteada', description: `Saldo restaurado a 1.000 ${SIM_CURRENCY}` });
+    toast({ title: t('arena.toast.resetTitle'), description: t('arena.toast.resetDesc') });
   };
 
   // ── History stats ─────────────────────────────────────────────────────────

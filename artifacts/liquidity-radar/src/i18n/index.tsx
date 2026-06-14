@@ -103,6 +103,23 @@ const translations = {
     'arena.sl.shortDesc': '↑ Cierra automático si sube a este precio',
     'arena.tp.longDesc': '↑ Cierra automático al alcanzar este precio',
     'arena.tp.shortDesc': '↓ Cierra automático al alcanzar este precio',
+    'arena.toast.insufficientFunds': 'Saldo insuficiente',
+    'arena.toast.insufficientDesc': 'Disponible:',
+    'arena.toast.posOpened': '⚔️ Posición abierta',
+    'arena.toast.tp': '🎯 Take Profit!',
+    'arena.toast.sl': '🛑 Stop Loss activado',
+    'arena.toast.liquidated': '💀 Liquidado',
+    'arena.toast.profit': '🏆 Ganancia',
+    'arena.toast.loss': '💸 Pérdida',
+    'arena.toast.resetTitle': '🔄 Cuenta reseteada',
+    'arena.toast.resetDesc': 'Saldo restaurado a 1.000 LRC',
+    'arena.toast.confirmReset': '¿Resetear saldo a 1.000 LRC y borrar historial?',
+    // Checkout
+    'checkout.success': '¡Bienvenido a LRC Pro!',
+    'checkout.successDesc': 'Tu prueba gratuita de 2 días está activa. Disfruta de todas las funciones.',
+    'checkout.cancelled': 'Pago cancelado',
+    'checkout.cancelledDesc': 'Puedes suscribirte en cualquier momento desde Ajustes.',
+    'checkout.gotoDashboard': 'Ir al Dashboard',
     // Support
     'support.title': 'Soporte',
     'support.subtitle': 'Estamos aquí para ayudarte',
@@ -292,6 +309,23 @@ const translations = {
     'arena.sl.shortDesc': '↑ Auto-closes if price rises to this level',
     'arena.tp.longDesc': '↑ Auto-closes when this price is reached',
     'arena.tp.shortDesc': '↓ Auto-closes when this price is reached',
+    'arena.toast.insufficientFunds': 'Insufficient balance',
+    'arena.toast.insufficientDesc': 'Available:',
+    'arena.toast.posOpened': '⚔️ Position opened',
+    'arena.toast.tp': '🎯 Take Profit!',
+    'arena.toast.sl': '🛑 Stop Loss triggered',
+    'arena.toast.liquidated': '💀 Liquidated',
+    'arena.toast.profit': '🏆 Profit',
+    'arena.toast.loss': '💸 Loss',
+    'arena.toast.resetTitle': '🔄 Account reset',
+    'arena.toast.resetDesc': 'Balance restored to 1,000 LRC',
+    'arena.toast.confirmReset': 'Reset balance to 1,000 LRC and clear history?',
+    // Checkout
+    'checkout.success': 'Welcome to LRC Pro!',
+    'checkout.successDesc': 'Your 2-day free trial is active. Enjoy all features.',
+    'checkout.cancelled': 'Payment cancelled',
+    'checkout.cancelledDesc': 'You can subscribe at any time from Settings.',
+    'checkout.gotoDashboard': 'Go to Dashboard',
     // Support
     'support.title': 'Support',
     'support.subtitle': "We're here to help",
@@ -392,7 +426,7 @@ type TranslationsContextType = {
 const TranslationsContext = createContext<TranslationsContextType | undefined>(undefined);
 
 export function TranslationsProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>('es');
+  const [language, setLang] = useState<Language>('es');
 
   useEffect(() => {
     try {
@@ -400,11 +434,20 @@ export function TranslationsProvider({ children }: { children: ReactNode }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.language === 'en' || parsed.language === 'es') {
-          setLanguage(parsed.language);
+          setLang(parsed.language);
         }
       }
     } catch {}
   }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLang(lang);
+    try {
+      const saved = localStorage.getItem('lr_user_profile');
+      const p = saved ? JSON.parse(saved) : {};
+      localStorage.setItem('lr_user_profile', JSON.stringify({ ...p, language: lang }));
+    } catch {}
+  };
 
   const t = (key: keyof typeof translations['es']) => {
     return translations[language][key] || translations['es'][key] || key;

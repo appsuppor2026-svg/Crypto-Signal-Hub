@@ -45,12 +45,10 @@ export default function CheckoutResult({ success }: { success: boolean }) {
         className="space-y-2"
       >
         <h1 className="text-2xl font-bold font-mono">
-          {success ? '¡Bienvenido a LRC Pro!' : 'Pago cancelado'}
+          {success ? t('checkout.success') : t('checkout.cancelled')}
         </h1>
         <p className="text-muted-foreground text-sm">
-          {success
-            ? 'Tu prueba gratuita de 2 días está activa. Disfruta de todas las funciones.'
-            : 'Puedes suscribirte en cualquier momento desde Ajustes.'}
+          {success ? t('checkout.successDesc') : t('checkout.cancelledDesc')}
         </p>
       </motion.div>
 
@@ -58,7 +56,7 @@ export default function CheckoutResult({ success }: { success: boolean }) {
         className="bg-[#f7931a] hover:bg-[#f7931a]/90 text-black font-bold px-8"
         onClick={() => navigate(success ? '/' : '/subscription')}
       >
-        {success ? 'Ir al Dashboard' : t('sub.cta')}
+        {success ? t('checkout.gotoDashboard') : t('sub.cta')}
       </Button>
     </div>
   );

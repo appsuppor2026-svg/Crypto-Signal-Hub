@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ export default function Support() {
   const [sent, setSent] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('lr_user_profile');
       if (saved) {
@@ -47,7 +47,7 @@ export default function Support() {
         if (p.email) setEmail(p.email);
       }
     } catch {}
-  });
+  }, []);
 
   const handleSend = async () => {
     if (!message.trim() || message.trim().length < 10) {
