@@ -1,3 +1,4 @@
 - [OKX klines proxy](okx-klines.md) — OKX es la única API que no bloquea IPs de Replit; proxy en `/api/market/klines`, sin key, caché 60s servidor.
 - [Canvas candles fix](canvas-candles.md) — recharts `Customized` no pasa escalas internas fiablemente; usar canvas overlay (`CandleCanvas.tsx`) con escala manual.
 - [AssetData change fields](asset-change-fields.md) — `change24h` = cambio absoluto en USD; `changePercent24h` = porcentaje. Usar siempre el correcto según contexto.
+- [Gmail OAuth connector](gmail-connector.md) — App Passwords de Gmail fallan en prod; usar Replit Gmail connector (`@replit/connectors-sdk`). Cuenta OAuth: `appsuppor2026@gmail.com` (sin 't' en support).
