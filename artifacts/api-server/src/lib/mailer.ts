@@ -5,6 +5,10 @@ import { logger } from './logger.js';
 export const MAIL_FROM = 'appsuppor2026@gmail.com';
 export const MAIL_ADMIN = 'appsuppor2026@gmail.com';
 
+function encodeSubject(subject: string): string {
+  return `=?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`;
+}
+
 function buildRawMessage(opts: {
   to: string;
   subject: string;
@@ -15,7 +19,7 @@ function buildRawMessage(opts: {
   const lines: string[] = [
     `From: "Liquidity Radar Crypto" <${MAIL_FROM}>`,
     `To: ${opts.to}`,
-    `Subject: ${opts.subject}`,
+    `Subject: ${encodeSubject(opts.subject)}`,
     `MIME-Version: 1.0`,
   ];
 
