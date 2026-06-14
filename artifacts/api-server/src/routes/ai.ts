@@ -181,4 +181,64 @@ router.post("/alert-email", async (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/ai/onboarding — bienvenida al nuevo usuario tras completar el onboarding
+router.post("/onboarding", async (req, res) => {
+  const { name, email, nickname, phone } = req.body as {
+    name: string; email: string; nickname?: string; phone?: string;
+  };
+
+  if (!email) { res.json({ ok: true }); return; }
+
+  const firstName = (name || email).split(' ')[0];
+
+  const html = `
+<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="background:#0d1117;color:#e6edf3;font-family:system-ui,sans-serif;margin:0;padding:32px">
+  <div style="max-width:480px;margin:0 auto">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:44px">⚡</div>
+      <h1 style="color:#f7931a;font-size:24px;margin:8px 0;font-family:monospace">Liquidity Radar Crypto</h1>
+    </div>
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:18px">Hola, ${firstName}! 👋</h2>
+      <p style="color:#8b949e;margin:0 0 16px;font-size:14px">
+        Tu cuenta ha sido creada correctamente. Bienvenido a <strong style="color:#e6edf3">LRC</strong>.
+      </p>
+      <div style="background:#0d1117;border-radius:8px;padding:16px">
+        <p style="margin:0 0 10px;font-size:13px;color:#f7931a;font-weight:600">¿Qué puedes hacer ahora?</p>
+        <ul style="margin:0;padding:0 0 0 18px;color:#8b949e;font-size:13px;line-height:2.2">
+          <li>📡 Ver el <strong style="color:#e6edf3">Radar Score</strong> de liquidez en tiempo real</li>
+          <li>📊 Analizar gráficos de velas con indicadores técnicos</li>
+          <li>🔔 Crear <strong style="color:#e6edf3">alertas de precio</strong> y recibirlas por email</li>
+          <li>🏟️ Simular operaciones en el <strong style="color:#e6edf3">Arena Simulator</strong></li>
+          <li>🤖 Obtener análisis AI por activo</li>
+        </ul>
+      </div>
+    </div>
+    <p style="text-align:center;color:#484f58;font-size:11px">
+      Si tienes dudas, responde a este correo · Liquidity Radar Crypto
+    </p>
+  </div>
+</body></html>`.trim();
+
+  const text = `Hola ${firstName}!\n\nTu cuenta en Liquidity Radar Crypto ha sido creada.\n\nYa puedes usar todas las herramientas de análisis: radar de liquidez, gráficos, alertas, Arena Simulator y análisis AI.\n\nSi tienes dudas, responde a este correo.\n\n— Equipo LRC`;
+
+  // Welcome email to user
+  sendMail({
+    to: email,
+    subject: `⚡ Bienvenido a Liquidity Radar Crypto, ${firstName}!`,
+    text,
+    html,
+  }).catch(() => {});
+
+  // Admin notification
+  sendMail({
+    to: MAIL_ADMIN,
+    subject: `[LRC] Nuevo usuario — ${name || email}`,
+    text: `Nuevo registro en LRC.\n\nNombre: ${name || '-'}\nEmail: ${email}\nNickname: ${nickname || '-'}\nTeléfono: ${phone || '-'}\nFecha: ${new Date().toLocaleString('es-ES')}`,
+  }).catch(() => {});
+
+  res.json({ ok: true });
+});
+
 export default router;
