@@ -1,16 +1,40 @@
-import nodemailer from 'nodemailer';
+// Gmail via Replit OAuth connector — no App Password needed
+import { ReplitConnectors } from '@replit/connectors-sdk';
 
-export const MAIL_FROM = '"Liquidity Radar Crypto" <appsupport2026@gmail.com>';
+export const MAIL_FROM = 'appsupport2026@gmail.com';
 export const MAIL_ADMIN = 'appsupport2026@gmail.com';
 
-export function createTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: MAIL_ADMIN,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
+function buildRawMessage(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+}): string {
+  const boundary = `lrc_${Date.now()}`;
+  const lines: string[] = [
+    `From: "Liquidity Radar Crypto" <${MAIL_FROM}>`,
+    `To: ${opts.to}`,
+    `Subject: ${opts.subject}`,
+    `MIME-Version: 1.0`,
+  ];
+
+  if (opts.html) {
+    lines.push(`Content-Type: multipart/alternative; boundary="${boundary}"`, '');
+    lines.push(`--${boundary}`);
+    lines.push('Content-Type: text/plain; charset=UTF-8', '');
+    lines.push(opts.text, '');
+    lines.push(`--${boundary}`);
+    lines.push('Content-Type: text/html; charset=UTF-8', '');
+    lines.push(opts.html, '');
+    lines.push(`--${boundary}--`);
+  } else {
+    lines.push('Content-Type: text/plain; charset=UTF-8', '');
+    lines.push(opts.text);
+  }
+
+  const raw = lines.join('\r\n');
+  // base64url encode (no padding, URL-safe)
+  return Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 export async function sendMail(opts: {
@@ -18,13 +42,18 @@ export async function sendMail(opts: {
   subject: string;
   text: string;
   html?: string;
-}) {
-  const transporter = createTransporter();
-  await transporter.sendMail({
-    from: MAIL_FROM,
-    to: opts.to,
-    subject: opts.subject,
-    text: opts.text,
-    html: opts.html,
+}): Promise<void> {
+  const connectors = new ReplitConnectors();
+  const raw = buildRawMessage(opts);
+
+  const response = await connectors.proxy('google-mail', '/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw }),
   });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`Gmail API error ${response.status}: ${body}`);
+  }
 }
