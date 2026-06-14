@@ -26,15 +26,18 @@ function buildRawMessage(opts: {
   if (opts.html) {
     lines.push(`Content-Type: multipart/alternative; boundary="${boundary}"`, '');
     lines.push(`--${boundary}`);
-    lines.push('Content-Type: text/plain; charset=UTF-8', '');
-    lines.push(opts.text, '');
+    lines.push('Content-Type: text/plain; charset=UTF-8');
+    lines.push('Content-Transfer-Encoding: base64', '');
+    lines.push(Buffer.from(opts.text, 'utf8').toString('base64'), '');
     lines.push(`--${boundary}`);
-    lines.push('Content-Type: text/html; charset=UTF-8', '');
-    lines.push(opts.html, '');
+    lines.push('Content-Type: text/html; charset=UTF-8');
+    lines.push('Content-Transfer-Encoding: base64', '');
+    lines.push(Buffer.from(opts.html, 'utf8').toString('base64'), '');
     lines.push(`--${boundary}--`);
   } else {
-    lines.push('Content-Type: text/plain; charset=UTF-8', '');
-    lines.push(opts.text);
+    lines.push('Content-Type: text/plain; charset=UTF-8');
+    lines.push('Content-Transfer-Encoding: base64', '');
+    lines.push(Buffer.from(opts.text, 'utf8').toString('base64'));
   }
 
   const raw = lines.join('\r\n');
