@@ -66,6 +66,12 @@ function App() {
     if (profile.email) {
       localStorage.setItem('lr_profile_email', profile.email);
     }
+    // Persist language choice
+    if (profile.language) {
+      const saved = localStorage.getItem('lr_user_profile');
+      const p = saved ? JSON.parse(saved) : {};
+      localStorage.setItem('lr_user_profile', JSON.stringify({ ...p, language: profile.language }));
+    }
     // Send welcome email to user + admin notification
     if (profile.email) {
       const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
