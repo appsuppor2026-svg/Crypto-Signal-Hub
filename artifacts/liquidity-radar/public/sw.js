@@ -13,7 +13,7 @@ const SYMBOL_TO_COINGECKO = {
 let activeAlerts = [];
 let checkInterval = null;
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -22,6 +22,36 @@ self.addEventListener('activate', (event) => {
   startPriceChecks();
 });
 
+// ── Web Push: server sends a push even when the browser is closed ──
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: '🚨 Alerta activada', body: event.data?.text() ?? '' };
+  }
+
+  const title = data.title ?? '🚨 Alerta activada';
+  const options = {
+    body: data.body ?? '',
+    icon: data.icon ?? '/favicon.svg',
+    badge: data.badge ?? '/favicon.svg',
+    tag: data.tag ?? 'lr-push',
+    requireInteraction: true,
+    vibrate: [200, 100, 200],
+    data: { url: data.url ?? '/', alertId: data.alertId, symbol: data.symbol },
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title, options).then(() => {
+      if (data.alertId) {
+        notifyClients({ type: 'ALERT_TRIGGERED', payload: { alertId: data.alertId } });
+      }
+    })
+  );
+});
+
+// ── Local background price checks (works when tab is open/backgrounded) ──
 self.addEventListener('message', (event) => {
   const { type, payload } = event.data || {};
 
@@ -41,16 +71,13 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const targetUrl = event.notification.data?.url ?? '/';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if ('focus' in client) {
-          return client.focus();
-        }
+        if ('focus' in client) return client.focus();
       }
-      if (clients.openWindow) {
-        return clients.openWindow('/');
-      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
     })
   );
 });
@@ -70,10 +97,7 @@ function stopPriceChecks() {
 
 async function checkPrices() {
   const untriggered = activeAlerts.filter(a => !a.triggered);
-  if (untriggered.length === 0) {
-    stopPriceChecks();
-    return;
-  }
+  if (untriggered.length === 0) { stopPriceChecks(); return; }
 
   const symbols = [...new Set(untriggered.map(a => a.symbol))];
   const ids = symbols.map(s => SYMBOL_TO_COINGECKO[s]).filter(Boolean).join(',');
@@ -91,39 +115,32 @@ async function checkPrices() {
       if (!cgId || !data[cgId]) continue;
 
       const price = data[cgId].usd;
-      let shouldTrigger = false;
+      const shouldTrigger =
+        (alert.condition === 'above' && price >= alert.targetPrice) ||
+        (alert.condition === 'below' && price <= alert.targetPrice);
 
-      if (alert.condition === 'above' && price >= alert.targetPrice) {
-        shouldTrigger = true;
-      } else if (alert.condition === 'below' && price <= alert.targetPrice) {
-        shouldTrigger = true;
-      }
+      if (!shouldTrigger) continue;
 
-      if (shouldTrigger) {
-        activeAlerts = activeAlerts.map(a =>
-          a.id === alert.id ? { ...a, triggered: true, triggeredAt: Date.now() } : a
-        );
+      activeAlerts = activeAlerts.map(a =>
+        a.id === alert.id ? { ...a, triggered: true, triggeredAt: Date.now() } : a
+      );
 
-        const conditionText = alert.condition === 'above' ? 'superó' : 'cayó por debajo de';
-        const priceFormatted = alert.targetPrice >= 1
-          ? `$${alert.targetPrice.toLocaleString('es-ES')}`
-          : `$${alert.targetPrice.toFixed(4)}`;
+      const conditionText = alert.condition === 'above' ? 'superó' : 'cayó por debajo de';
+      const fmt = (n) => n >= 1 ? `$${n.toLocaleString('es-ES')}` : `$${n.toFixed(4)}`;
 
-        await self.registration.showNotification(`🚨 Alerta: ${alert.symbol}`, {
-          body: `${alert.symbol} ${conditionText} ${priceFormatted}. Precio actual: $${price.toLocaleString('es-ES')}`,
-          icon: '/favicon.svg',
-          badge: '/favicon.svg',
-          tag: `alert-${alert.id}`,
-          requireInteraction: true,
-          data: { alertId: alert.id, symbol: alert.symbol },
-          vibrate: [200, 100, 200],
-        });
+      await self.registration.showNotification(`🚨 ${alert.symbol} · Alerta activada`, {
+        body: `${alert.symbol} ${conditionText} ${fmt(alert.targetPrice)}. Ahora: ${fmt(price)}`,
+        icon: '/favicon.svg',
+        badge: '/favicon.svg',
+        tag: `alert-${alert.id}`,
+        requireInteraction: true,
+        data: { alertId: alert.id, symbol: alert.symbol, url: '/' },
+        vibrate: [200, 100, 200],
+      });
 
-        notifyClients({ type: 'ALERT_TRIGGERED', payload: { alertId: alert.id } });
-      }
+      notifyClients({ type: 'ALERT_TRIGGERED', payload: { alertId: alert.id } });
     }
-  } catch (err) {
-  }
+  } catch {}
 }
 
 function notifyClients(message) {

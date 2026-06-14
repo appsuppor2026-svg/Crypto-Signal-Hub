@@ -107,6 +107,7 @@ export function OnboardingModal({ onComplete }: Props) {
       }, 350);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [checked, step]);
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);

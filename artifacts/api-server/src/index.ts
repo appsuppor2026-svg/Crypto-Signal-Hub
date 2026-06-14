@@ -1,6 +1,7 @@
 import app from "./app.js";
 import { logger } from "./lib/logger.js";
 import { getStripeSync } from "./stripeClient.js";
+import { initPushService } from "./services/pushService.js";
 
 const rawPort = process.env["PORT"];
 
@@ -33,6 +34,7 @@ async function initStripe() {
 
 // Non-blocking
 initStripe();
+initPushService();
 
 app.listen(port, (err) => {
   if (err) {

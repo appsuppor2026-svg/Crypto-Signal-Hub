@@ -6,6 +6,8 @@ import {
   requestNotificationPermission,
   getNotificationPermission,
   showNotificationViaRegistration,
+  subscribeToPush,
+  syncAlertsToPushServer,
 } from '@/services/swService';
 
 export interface PriceAlert {
@@ -88,16 +90,26 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
   const smartPrefsRef = useRef(smartPrefs);
   useEffect(() => { smartPrefsRef.current = smartPrefs; }, [smartPrefs]);
 
+  // ── Initial setup: register SW + subscribe to Web Push if permission granted ──
   useEffect(() => {
+    let savedAlerts: PriceAlert[] = [];
     try {
-      const saved = localStorage.getItem('lr_price_alerts');
-      if (saved) setAlerts(JSON.parse(saved));
+      const raw = localStorage.getItem('lr_price_alerts');
+      if (raw) savedAlerts = JSON.parse(raw);
+      setAlerts(savedAlerts);
     } catch {}
 
-    registerSW().then(() => {
-      const saved = localStorage.getItem('lr_price_alerts');
-      if (saved) {
-        try { syncAlertsToSW(JSON.parse(saved)); } catch {}
+    registerSW().then((swOk) => {
+      if (!swOk) return;
+      syncAlertsToSW(savedAlerts).catch(() => {});
+
+      // If permission already granted, subscribe to Web Push silently
+      if (Notification.permission === 'granted') {
+        const email =
+          localStorage.getItem('lr_sub_email') ||
+          localStorage.getItem('lr_profile_email') ||
+          undefined;
+        subscribeToPush(savedAlerts, email).catch(() => {});
       }
     });
 
@@ -114,6 +126,13 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
+  // ── Helpers ──
+  function persistAndSync(updated: PriceAlert[]) {
+    localStorage.setItem('lr_price_alerts', JSON.stringify(updated));
+    syncAlertsToSW(updated).catch(() => {});
+    syncAlertsToPushServer(updated).catch(() => {});
+  }
+
   const addAlert = useCallback((alert: Omit<PriceAlert, 'id' | 'createdAt' | 'triggered'>) => {
     setAlerts(prev => {
       const newAlert: PriceAlert = {
@@ -123,8 +142,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
         triggered: false,
       };
       const updated = [...prev, newAlert];
-      localStorage.setItem('lr_price_alerts', JSON.stringify(updated));
-      syncAlertsToSW(updated).catch(() => {});
+      persistAndSync(updated);
       return updated;
     });
   }, []);
@@ -132,8 +150,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
   const removeAlert = useCallback((id: string) => {
     setAlerts(prev => {
       const updated = prev.filter(a => a.id !== id);
-      localStorage.setItem('lr_price_alerts', JSON.stringify(updated));
-      syncAlertsToSW(updated).catch(() => {});
+      persistAndSync(updated);
       return updated;
     });
   }, []);
@@ -143,8 +160,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       const updated = prev.map(a =>
         a.id === id ? { ...a, triggered: true, triggeredAt: Date.now() } : a
       );
-      localStorage.setItem('lr_price_alerts', JSON.stringify(updated));
-      syncAlertsToSW(updated).catch(() => {});
+      persistAndSync(updated);
       return updated;
     });
   }, []);
@@ -174,7 +190,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
             `${alert.symbol} ${conditionText} ${priceFormatted}`
           ).catch(() => {});
 
-          // Send email alert if user has email stored
+          // Send email alert
           const userEmail = localStorage.getItem('lr_sub_email') || localStorage.getItem('lr_profile_email');
           if (userEmail) {
             const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -197,8 +213,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       });
 
       if (changed) {
-        localStorage.setItem('lr_price_alerts', JSON.stringify(updated));
-        syncAlertsToSW(updated).catch(() => {});
+        persistAndSync(updated);
         return updated;
       }
       return prev;
@@ -292,6 +307,18 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
   const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
     const result = await requestNotificationPermission();
     setNotificationPermission(result);
+
+    if (result === 'granted') {
+      const email =
+        localStorage.getItem('lr_sub_email') ||
+        localStorage.getItem('lr_profile_email') ||
+        undefined;
+      const currentAlerts: PriceAlert[] = (() => {
+        try { return JSON.parse(localStorage.getItem('lr_price_alerts') ?? '[]'); } catch { return []; }
+      })();
+      subscribeToPush(currentAlerts, email).catch(() => {});
+    }
+
     return result;
   }, []);
 
