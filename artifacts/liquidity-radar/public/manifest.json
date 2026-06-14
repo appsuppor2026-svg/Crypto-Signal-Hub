@@ -1,0 +1,44 @@
+{
+  "name": "Liquidity Radar Crypto",
+  "short_name": "LiqRadar",
+  "description": "Análisis de liquidez cripto en tiempo real. Alertas de precio, gráficos de velas y señales de mercado.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#FF3C00",
+  "background_color": "#0A0A0F",
+  "lang": "es",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/opengraph.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Dashboard de liquidez cripto"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Alertas de precio",
+      "short_name": "Alertas",
+      "url": "/?tab=alerts",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
