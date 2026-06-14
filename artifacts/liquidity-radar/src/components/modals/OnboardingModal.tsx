@@ -1,8 +1,7 @@
 /**
  * OnboardingModal — shown ONCE on first launch.
- * Step 1: user enters name + nickname.
- * Step 2: reads and accepts disclaimer.
- * On completion both profile + acceptance are persisted to localStorage.
+ * Step 1: name (required), email (required), nickname + phone (optional).
+ * Step 2: disclaimer acceptance.
  */
 
 import { useState } from 'react';
@@ -13,27 +12,51 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertTriangle, ChevronRight, Zap } from 'lucide-react';
 
+export interface OnboardingProfile {
+  name: string;
+  email: string;
+  nickname: string;
+  phone: string;
+}
+
 interface Props {
-  onComplete: (name: string, nickname: string) => void;
+  onComplete: (profile: OnboardingProfile) => void;
 }
 
 export function OnboardingModal({ onComplete }: Props) {
   const [step, setStep]         = useState<1 | 2>(1);
   const [name, setName]         = useState('');
+  const [email, setEmail]       = useState('');
   const [nickname, setNickname] = useState('');
+  const [phone, setPhone]       = useState('');
   const [checked, setChecked]   = useState(false);
   const [visible, setVisible]   = useState(true);
+  const [emailError, setEmailError] = useState('');
 
-  const handleNext = () => {
-    if (step === 1) { setStep(2); return; }
-    // Step 2: finalize
-    setVisible(false);
-    setTimeout(() => onComplete(name.trim(), nickname.trim()), 350);
-  };
+  const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
   const canNext = step === 1
-    ? name.trim().length >= 2
+    ? name.trim().length >= 2 && isValidEmail(email.trim())
     : checked;
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!isValidEmail(email.trim())) {
+        setEmailError('Introduce un email válido');
+        return;
+      }
+      setEmailError('');
+      setStep(2);
+      return;
+    }
+    setVisible(false);
+    setTimeout(() => onComplete({
+      name: name.trim(),
+      email: email.trim(),
+      nickname: nickname.trim(),
+      phone: phone.trim(),
+    }), 350);
+  };
 
   return (
     <AnimatePresence>
@@ -44,7 +67,6 @@ export function OnboardingModal({ onComplete }: Props) {
           exit={{ opacity: 0, transition: { duration: 0.3 } }}
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/97 backdrop-blur-md p-6"
         >
-          {/* Ambient glow */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-primary/5 blur-[80px]" />
           </div>
@@ -67,7 +89,7 @@ export function OnboardingModal({ onComplete }: Props) {
               />
             </div>
 
-            <div className="p-7 space-y-6">
+            <div className="p-7 space-y-5">
               {/* ── Step 1: Profile ──────────────────────────────── */}
               {step === 1 && (
                 <>
@@ -82,10 +104,10 @@ export function OnboardingModal({ onComplete }: Props) {
                   </div>
 
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Antes de empezar, dinos cómo te llamamos.
+                    Completa tu perfil para continuar. Recibirás alertas y notificaciones en tu email.
                   </p>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="ob-name" className="text-sm font-medium">
                         Nombre completo <span className="text-destructive">*</span>
@@ -95,21 +117,55 @@ export function OnboardingModal({ onComplete }: Props) {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="Ej. Juan Pérez"
-                        className="h-11"
+                        className="h-10"
                         autoFocus
                         onKeyDown={e => e.key === 'Enter' && canNext && handleNext()}
                       />
                     </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ob-email" className="text-sm font-medium">
+                        Email <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="ob-email"
+                        type="email"
+                        value={email}
+                        onChange={e => { setEmail(e.target.value); setEmailError(''); }}
+                        placeholder="Ej. juan@email.com"
+                        className={`h-10 ${emailError ? 'border-destructive' : ''}`}
+                        onKeyDown={e => e.key === 'Enter' && canNext && handleNext()}
+                      />
+                      {emailError && (
+                        <p className="text-xs text-destructive">{emailError}</p>
+                      )}
+                    </div>
+
                     <div className="space-y-1.5">
                       <Label htmlFor="ob-nick" className="text-sm font-medium">
-                        Nickname <span className="text-muted-foreground font-normal">(opcional)</span>
+                        Nickname <span className="text-muted-foreground font-normal text-xs">(opcional)</span>
                       </Label>
                       <Input
                         id="ob-nick"
                         value={nickname}
                         onChange={e => setNickname(e.target.value)}
                         placeholder="Ej. CryptoTrader99"
-                        className="h-11"
+                        className="h-10"
+                        onKeyDown={e => e.key === 'Enter' && canNext && handleNext()}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="ob-phone" className="text-sm font-medium">
+                        Teléfono <span className="text-muted-foreground font-normal text-xs">(opcional)</span>
+                      </Label>
+                      <Input
+                        id="ob-phone"
+                        type="tel"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        placeholder="Ej. +34 600 000 000"
+                        className="h-10"
                         onKeyDown={e => e.key === 'Enter' && canNext && handleNext()}
                       />
                     </div>

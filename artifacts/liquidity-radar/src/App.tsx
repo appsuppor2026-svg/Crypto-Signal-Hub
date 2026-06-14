@@ -20,7 +20,7 @@ import Support from "@/pages/Support";
 import Subscription from "@/pages/Subscription";
 import CheckoutResult from "@/pages/CheckoutResult";
 import NotFound from "@/pages/not-found";
-import { OnboardingModal } from '@/components/modals/OnboardingModal';
+import { OnboardingModal, type OnboardingProfile } from '@/components/modals/OnboardingModal';
 
 const queryClient = new QueryClient();
 
@@ -51,15 +51,21 @@ function App() {
     }
   }, []);
 
-  const handleOnboardingComplete = (name: string, nickname: string) => {
+  const handleOnboardingComplete = (profile: OnboardingProfile) => {
     localStorage.setItem('lr_disclaimer_accepted', 'true');
     const existing = localStorage.getItem('lr_user_profile');
-    const profile = existing ? JSON.parse(existing) : {};
+    const prev = existing ? JSON.parse(existing) : {};
     localStorage.setItem('lr_user_profile', JSON.stringify({
-      ...profile,
-      ...(name     ? { name }     : {}),
-      ...(nickname ? { nickname } : {}),
+      ...prev,
+      ...(profile.name     ? { name: profile.name }         : {}),
+      ...(profile.email    ? { email: profile.email }       : {}),
+      ...(profile.nickname ? { nickname: profile.nickname } : {}),
+      ...(profile.phone    ? { phone: profile.phone }       : {}),
     }));
+    // Store email for alert notifications
+    if (profile.email) {
+      localStorage.setItem('lr_profile_email', profile.email);
+    }
     setOnboardingDone(true);
   };
 
