@@ -41,5 +41,17 @@
       "url": "/?tab=alerts",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=app.replit.crypto_signal_hub_appsuppor2026.twa",
+      "id": "app.replit.crypto_signal_hub_appsuppor2026.twa"
+    },
+    {
+      "platform": "webapp",
+      "url": "https://crypto-signal-hub-appsuppor2026.replit.app/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false
 }
