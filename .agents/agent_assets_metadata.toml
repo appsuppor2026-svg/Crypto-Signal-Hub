@@ -1,0 +1,13 @@
+uploads = []
+
+[[generated]]
+id = "iQeaRDXLf_HJSIeKqY_G2"
+uri = "file://artifacts/liquidity-radar/public/feature-graphic.png"
+type = "image"
+title = "liquidity-radar-feature-graphic"
+
+[[outputs]]
+id = "bHBFShjx8ra-sJTJ4AMW_"
+uri = "file://artifacts/liquidity-radar/public/feature-graphic.png"
+type = "image"
+title = "Feature Graphic — Google Play Store (16:9)"
