@@ -4,28 +4,29 @@ import { stripeService } from '../stripeService.js';
 
 const router: IRouter = Router();
 
-// GET /api/stripe/plans — lista productos con precios
+// GET /api/stripe/plans — lista productos con precios (directo desde Stripe API)
 router.get('/plans', async (_req, res) => {
   try {
-    const rows = await storage.listProductsWithPrices();
+    const stripe = await import('../stripeClient.js').then(m => m.getUncachableStripeClient());
+
+    const [productsResult, pricesResult] = await Promise.all([
+      stripe.products.list({ active: true, limit: 100 }),
+      stripe.prices.list({ active: true, limit: 100, expand: ['data.product'] }),
+    ]);
 
     const productsMap = new Map<string, any>();
-    for (const row of rows) {
-      if (!productsMap.has(row.product_id as string)) {
-        productsMap.set(row.product_id as string, {
-          id: row.product_id,
-          name: row.product_name,
-          description: row.product_description,
-          prices: [],
-        });
-      }
-      if (row.price_id) {
-        productsMap.get(row.product_id as string).prices.push({
-          id: row.price_id,
-          unit_amount: row.unit_amount,
-          currency: row.currency,
-          recurring: row.recurring,
-          metadata: row.price_metadata,
+    for (const p of productsResult.data) {
+      productsMap.set(p.id, { id: p.id, name: p.name, description: p.description, prices: [] });
+    }
+    for (const pr of pricesResult.data) {
+      const productId = typeof pr.product === 'string' ? pr.product : pr.product?.id;
+      if (productId && productsMap.has(productId)) {
+        productsMap.get(productId).prices.push({
+          id: pr.id,
+          unit_amount: pr.unit_amount,
+          currency: pr.currency,
+          recurring: pr.recurring,
+          metadata: pr.metadata,
         });
       }
     }
