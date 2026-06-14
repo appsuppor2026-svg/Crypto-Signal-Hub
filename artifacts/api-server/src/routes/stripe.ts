@@ -42,7 +42,8 @@ router.post('/checkout', async (req, res) => {
     const { priceId, email } = req.body as { priceId: string; email: string };
 
     if (!priceId || !email) {
-      return res.status(400).json({ error: 'priceId and email are required' });
+      res.status(400).json({ error: 'priceId and email are required' });
+      return;
     }
 
     // Upsert user
@@ -75,12 +76,13 @@ router.post('/checkout', async (req, res) => {
 router.post('/portal', async (req, res) => {
   try {
     const { email } = req.body as { email: string };
-    if (!email) return res.status(400).json({ error: 'email is required' });
+    if (!email) { res.status(400).json({ error: 'email is required' }); return; }
 
     const userId = Buffer.from(email).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
     const user = await storage.getUser(userId);
     if (!user?.stripeCustomerId) {
-      return res.status(404).json({ error: 'No customer found for this email' });
+      res.status(404).json({ error: 'No customer found for this email' });
+      return;
     }
 
     const host = `${req.protocol}://${req.get('host')}`;
@@ -98,18 +100,20 @@ router.post('/portal', async (req, res) => {
 router.get('/status', async (req, res) => {
   try {
     const email = req.query.email as string;
-    if (!email) return res.status(400).json({ error: 'email is required' });
+    if (!email) { res.status(400).json({ error: 'email is required' }); return; }
 
     const userId = Buffer.from(email).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
     const user = await storage.getUser(userId);
 
     if (!user?.stripeCustomerId) {
-      return res.json({ status: 'none', isActive: false });
+      res.json({ status: 'none', isActive: false });
+      return;
     }
 
     const sub = await storage.getActiveSubscriptionByCustomer(user.stripeCustomerId);
     if (!sub) {
-      return res.json({ status: 'none', isActive: false });
+      res.json({ status: 'none', isActive: false });
+      return;
     }
 
     res.json({

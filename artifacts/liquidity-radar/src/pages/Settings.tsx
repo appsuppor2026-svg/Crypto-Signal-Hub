@@ -3,14 +3,16 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { User, ChevronRight, MessageSquare } from "lucide-react";
+import { User, ChevronRight, MessageSquare, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { useSubscription } from "@/context/SubscriptionContext";
 
 export default function Settings() {
   const { t, language, setLanguage } = useTranslation();
   const [, setLocation] = useLocation();
   const [nickname, setNickname] = useState<string | null>(null);
+  const { isActive, isTrial } = useSubscription();
 
   useEffect(() => {
     const saved = localStorage.getItem('lr_user_profile');
@@ -44,6 +46,27 @@ export default function Settings() {
               <div>
                 <h2 className="font-medium text-foreground">{t('settings.profile')}</h2>
                 <p className="text-sm text-muted-foreground">{nickname || t('settings.profileDesc')}</p>
+              </div>
+            </div>
+            <ChevronRight size={20} className="text-muted-foreground" />
+          </CardContent>
+        </Card>
+
+        {/* Subscription card */}
+        <Card
+          className="bg-card border-border shadow-md cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setLocation('/subscription')}
+        >
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-[#f7931a]/10 text-[#f7931a] rounded-full">
+                <Zap size={20} />
+              </div>
+              <div>
+                <h2 className="font-medium text-foreground">{t('sub.settingsTitle')}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {isActive ? (isTrial ? t('sub.trial_active') : t('sub.active')) : t('sub.settingsDesc')}
+                </p>
               </div>
             </div>
             <ChevronRight size={20} className="text-muted-foreground" />

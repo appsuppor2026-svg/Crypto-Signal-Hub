@@ -19,7 +19,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
   const resp = await fetch(
     `https://${hostname}/api/v2/connection?include_secrets=true&connector_names=stripe`,
     {
-      headers: { Accept: "application/json", X_REPLIT_TOKEN: xReplitToken },
+      headers: { Accept: "application/json", "x-replit-token": xReplitToken },
       signal: AbortSignal.timeout(10_000),
     }
   );
@@ -28,10 +28,10 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
     throw new Error(`Failed to fetch Stripe credentials: ${resp.status} ${resp.statusText}`);
   }
 
-  const data = await resp.json();
+  const data = await resp.json() as { items?: Array<{ settings?: { secret?: string; webhook_secret?: string } }> };
   const settings = data.items?.[0]?.settings;
 
-  if (!settings?.secret_key) {
+  if (!settings?.secret) {
     throw new Error(
       'Stripe integration not connected or missing secret key. ' +
       'Connect Stripe via the Integrations tab first.'
@@ -39,8 +39,8 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
   }
 
   return {
-    secretKey: settings.secret_key,
-    webhookSecret: settings.webhook_secret,
+    secretKey: settings.secret as string,
+    webhookSecret: settings.webhook_secret as string | undefined,
   };
 }
 

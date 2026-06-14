@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { TranslationsProvider } from '@/i18n';
 import { AssetProvider } from '@/context/AssetContext';
 import { AlertsProvider } from '@/context/AlertsContext';
+import { SubscriptionProvider } from '@/context/SubscriptionContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 
 import Dashboard from "@/pages/Dashboard";
@@ -16,6 +17,8 @@ import AIAnalysis from "@/pages/AIAnalysis";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import Support from "@/pages/Support";
+import Subscription from "@/pages/Subscription";
+import CheckoutResult from "@/pages/CheckoutResult";
 import NotFound from "@/pages/not-found";
 import { OnboardingModal } from '@/components/modals/OnboardingModal';
 
@@ -30,6 +33,9 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/profile" component={Profile} />
       <Route path="/support" component={Support} />
+      <Route path="/subscription" component={Subscription} />
+      <Route path="/checkout/success" component={() => <CheckoutResult success />} />
+      <Route path="/checkout/cancel" component={() => <CheckoutResult success={false} />} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -46,10 +52,7 @@ function App() {
   }, []);
 
   const handleOnboardingComplete = (name: string, nickname: string) => {
-    // Persist disclaimer acceptance
     localStorage.setItem('lr_disclaimer_accepted', 'true');
-
-    // Save basic profile (merge with any existing data)
     const existing = localStorage.getItem('lr_user_profile');
     const profile = existing ? JSON.parse(existing) : {};
     localStorage.setItem('lr_user_profile', JSON.stringify({
@@ -57,28 +60,29 @@ function App() {
       ...(name     ? { name }     : {}),
       ...(nickname ? { nickname } : {}),
     }));
-
     setOnboardingDone(true);
   };
 
   return (
     <QueryClientProvider client={queryClient}>
       <TranslationsProvider>
-        <AssetProvider>
-          <AlertsProvider>
-            <TooltipProvider>
-              {!onboardingDone && (
-                <OnboardingModal onComplete={handleOnboardingComplete} />
-              )}
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <AppLayout>
-                  <Router />
-                </AppLayout>
-              </WouterRouter>
-              <Toaster />
-            </TooltipProvider>
-          </AlertsProvider>
-        </AssetProvider>
+        <SubscriptionProvider>
+          <AssetProvider>
+            <AlertsProvider>
+              <TooltipProvider>
+                {!onboardingDone && (
+                  <OnboardingModal onComplete={handleOnboardingComplete} />
+                )}
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <AppLayout>
+                    <Router />
+                  </AppLayout>
+                </WouterRouter>
+                <Toaster />
+              </TooltipProvider>
+            </AlertsProvider>
+          </AssetProvider>
+        </SubscriptionProvider>
       </TranslationsProvider>
     </QueryClientProvider>
   );
