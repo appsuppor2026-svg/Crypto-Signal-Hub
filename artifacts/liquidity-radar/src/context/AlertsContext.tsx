@@ -174,6 +174,23 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
             `${alert.symbol} ${conditionText} ${priceFormatted}`
           ).catch(() => {});
 
+          // Send email alert if user has email stored
+          const userEmail = localStorage.getItem('lr_sub_email') || localStorage.getItem('lr_profile_email');
+          if (userEmail) {
+            const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+            fetch(`${BASE}/api/ai/alert-email`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: userEmail,
+                symbol: alert.symbol,
+                condition: alert.condition,
+                targetPrice: alert.targetPrice,
+                currentPrice: price,
+              }),
+            }).catch(() => {});
+          }
+
           return { ...alert, triggered: true, triggeredAt: Date.now() };
         }
         return alert;

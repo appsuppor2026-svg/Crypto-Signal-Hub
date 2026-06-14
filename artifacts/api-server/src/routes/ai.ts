@@ -1,6 +1,6 @@
 import { Router } from "express";
 import OpenAI from "openai";
-import nodemailer from "nodemailer";
+import { sendMail, MAIL_ADMIN } from "../lib/mailer.js";
 
 const router = Router();
 
@@ -80,14 +80,6 @@ router.post("/contact", async (req, res) => {
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "appsupport2026@gmail.com",
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-
   const mailContent = `
 Nueva consulta de soporte — Liquidity Radar Crypto
 ===================================================
@@ -101,18 +93,14 @@ ${message}
   `.trim();
 
   try {
-    await transporter.sendMail({
-      from: `"Liquidity Radar App" <appsupport2026@gmail.com>`,
-      to: "appsupport2026@gmail.com",
+    await sendMail({
+      to: MAIL_ADMIN,
       subject: `[Soporte LR] ${subject || "Nueva consulta"} - ${name || email || "usuario"}`,
       text: mailContent,
     });
-
     res.json({ ok: true });
   } catch (err: any) {
-    // Log but return ok so users don't see internal details
     req.log?.warn?.({ err: err.message }, "Email send failed");
-    // Still return ok to not leak email config
     res.json({ ok: true });
   }
 });
@@ -121,14 +109,6 @@ ${message}
 router.post("/profile-notify", async (req, res) => {
   const { profile } = req.body;
   if (!profile) { res.json({ ok: true }); return; }
-
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: "appsupport2026@gmail.com",
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
 
   const content = `
 Nuevo perfil guardado — Liquidity Radar Crypto
@@ -142,15 +122,56 @@ Idioma: ${profile.language || "-"}
 Fecha: ${new Date().toLocaleString("es-ES")}
   `.trim();
 
-  try {
-    await transporter.sendMail({
-      from: `"Liquidity Radar App" <appsupport2026@gmail.com>`,
-      to: "appsupport2026@gmail.com",
-      subject: `[LR] Perfil actualizado — ${profile.name || profile.nickname || profile.email || "usuario"}`,
-      text: content,
-    });
-  } catch (_) {}
+  sendMail({
+    to: MAIL_ADMIN,
+    subject: `[LR] Perfil actualizado — ${profile.name || profile.nickname || profile.email || "usuario"}`,
+    text: content,
+  }).catch(() => {});
 
+  res.json({ ok: true });
+});
+
+// POST /api/ai/alert-email — envía email cuando salta una alerta de precio
+router.post("/alert-email", async (req, res) => {
+  const { email, symbol, condition, targetPrice, currentPrice } = req.body as {
+    email: string;
+    symbol: string;
+    condition: 'above' | 'below';
+    targetPrice: number;
+    currentPrice: number;
+  };
+
+  if (!email || !symbol || !targetPrice) {
+    res.json({ ok: true }); return;
+  }
+
+  const conditionText = condition === 'above' ? 'superó' : 'cayó por debajo de';
+  const fmt = (n: number) => n >= 1
+    ? `$${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `$${n.toFixed(4)}`;
+
+  const subject = `🚨 Alerta disparada: ${symbol} ${conditionText} ${fmt(targetPrice)}`;
+  const text = `Tu alerta de precio se ha disparado.\n\n${symbol} ${conditionText} ${fmt(targetPrice)}\nPrecio actual: ${fmt(currentPrice)}\nFecha: ${new Date().toLocaleString('es-ES')}\n\nGestiona tus alertas en la app de Liquidity Radar Crypto.`;
+  const html = `
+<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="background:#0d1117;color:#e6edf3;font-family:system-ui,sans-serif;margin:0;padding:32px">
+  <div style="max-width:420px;margin:0 auto">
+    <h1 style="color:#f7931a;font-family:monospace;font-size:22px;text-align:center;margin-bottom:24px">⚡ Liquidity Radar Crypto</h1>
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px">🚨</div>
+      <h2 style="margin:0 0 12px;font-size:18px;text-align:center">Alerta Disparada</h2>
+      <div style="background:#0d1117;border-radius:8px;padding:16px;text-align:center">
+        <p style="font-size:24px;font-family:monospace;color:#f7931a;margin:0 0 4px;font-weight:700">${symbol}</p>
+        <p style="margin:0;color:#8b949e;font-size:14px">${conditionText} <strong style="color:#e6edf3">${fmt(targetPrice)}</strong></p>
+        <p style="margin:8px 0 0;color:#8b949e;font-size:13px">Precio actual: <strong style="color:#e6edf3">${fmt(currentPrice)}</strong></p>
+      </div>
+      <p style="text-align:center;color:#8b949e;font-size:12px;margin-top:16px">${new Date().toLocaleString('es-ES')}</p>
+    </div>
+    <p style="text-align:center;color:#484f58;font-size:11px;margin-top:16px">Gestiona tus alertas en la app · Liquidity Radar Crypto</p>
+  </div>
+</body></html>`.trim();
+
+  sendMail({ to: email, subject, text, html }).catch(() => {});
   res.json({ ok: true });
 });
 
