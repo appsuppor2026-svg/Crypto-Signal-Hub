@@ -6,6 +6,12 @@ uri = "file://artifacts/liquidity-radar/public/feature-graphic.png"
 type = "image"
 title = "liquidity-radar-feature-graphic"
 
+[[generated]]
+id = "YIZwNA94uzJxpg9TwJL9Y"
+uri = "file://artifacts/liquidity-radar/public/icon-raw.png"
+type = "image"
+title = "liquidity-radar-icon"
+
 [[outputs]]
 id = "bHBFShjx8ra-sJTJ4AMW_"
 uri = "file://artifacts/liquidity-radar/public/feature-graphic.png"
@@ -17,3 +23,9 @@ id = "VcM5q7a6XhbvwQZpsyRje"
 uri = "file://artifacts/liquidity-radar/public/feature-graphic.jpg"
 type = "image"
 title = "Feature Graphic 4096×2304 JPEG — 1.9MB ✅"
+
+[[outputs]]
+id = "E5TK-TMbs2Q_COJjwy1Ad"
+uri = "file://artifacts/liquidity-radar/public/icon-512.png"
+type = "image"
+title = "Nuevo icono 512×512 — Google Play"
