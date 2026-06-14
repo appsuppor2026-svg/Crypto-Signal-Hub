@@ -11,3 +11,9 @@ id = "bHBFShjx8ra-sJTJ4AMW_"
 uri = "file://artifacts/liquidity-radar/public/feature-graphic.png"
 type = "image"
 title = "Feature Graphic 4096×2304 — Google Play Store"
+
+[[outputs]]
+id = "VcM5q7a6XhbvwQZpsyRje"
+uri = "file://artifacts/liquidity-radar/public/feature-graphic.jpg"
+type = "image"
+title = "Feature Graphic 4096×2304 JPEG — 1.9MB ✅"
