@@ -1,8 +1,9 @@
 // Gmail via Replit OAuth connector — no App Password needed
 import { ReplitConnectors } from '@replit/connectors-sdk';
+import { logger } from './logger.js';
 
-export const MAIL_FROM = 'appsupport2026@gmail.com';
-export const MAIL_ADMIN = 'appsupport2026@gmail.com';
+export const MAIL_FROM = 'appsuppor2026@gmail.com';
+export const MAIL_ADMIN = 'appsuppor2026@gmail.com';
 
 function buildRawMessage(opts: {
   to: string;
@@ -33,8 +34,18 @@ function buildRawMessage(opts: {
   }
 
   const raw = lines.join('\r\n');
-  // base64url encode (no padding, URL-safe)
   return Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export async function getGmailProfile(): Promise<{ emailAddress?: string; error?: string }> {
+  try {
+    const connectors = new ReplitConnectors();
+    const response = await connectors.proxy('google-mail', '/gmail/v1/users/me/profile', { method: 'GET' });
+    const body = await response.json() as any;
+    return body;
+  } catch (err: any) {
+    return { error: err.message };
+  }
 }
 
 export async function sendMail(opts: {
@@ -52,8 +63,11 @@ export async function sendMail(opts: {
     body: JSON.stringify({ raw }),
   });
 
+  const responseBody = await response.text().catch(() => '');
+
+  logger.info({ status: response.status, to: opts.to, subject: opts.subject, body: responseBody }, 'Gmail API send result');
+
   if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(`Gmail API error ${response.status}: ${body}`);
+    throw new Error(`Gmail API error ${response.status}: ${responseBody}`);
   }
 }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import OpenAI from "openai";
-import { sendMail, MAIL_ADMIN } from "../lib/mailer.js";
+import { sendMail, getGmailProfile, MAIL_ADMIN } from "../lib/mailer.js";
 
 const router = Router();
 
@@ -69,6 +69,12 @@ Sé directo, usa datos concretos del activo, y mantén cada sección en 2-3 lín
     res.write(`data: ${JSON.stringify({ error: err.message || "Error generando análisis" })}\n\n`);
     res.end();
   }
+});
+
+// GET /api/ai/mail-diag — diagnose Gmail connector (which account, can we send?)
+router.get("/mail-diag", async (req, res) => {
+  const profile = await getGmailProfile();
+  res.json({ profile });
 });
 
 // POST /api/ai/contact — send support email (hidden destination)
