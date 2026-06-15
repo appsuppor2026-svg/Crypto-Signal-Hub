@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.replit.crypto_signal_hub_appsuppor2026.twa",
+        "sha256_cert_fingerprints": ["2D:44:C9:C3:25:96:BE:6B:98:AA:8D:88:5B:B8:37:8A:9E:1F:2A:AA:43:D6:29:FA:9E:BF:9D:78:49:1C:32:2F"]
+      }
+    }]
