@@ -97,11 +97,22 @@ router.post('/portal', async (req, res) => {
   }
 });
 
+const TEST_ACCOUNTS = new Set([
+  'reviewer@liqradar.test',
+  'google.play.review@liqradar.test',
+]);
+
 // GET /api/stripe/status?email=... — estado de suscripción
 router.get('/status', async (req, res) => {
   try {
     const email = req.query.email as string;
     if (!email) { res.status(400).json({ error: 'email is required' }); return; }
+
+    // Cuenta de prueba para revisores de Play Store
+    if (TEST_ACCOUNTS.has(email.toLowerCase())) {
+      res.json({ status: 'active', isActive: true, isTrial: false, currentPeriodEnd: null, trialEnd: null });
+      return;
+    }
 
     const userId = Buffer.from(email).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 32);
     const user = await storage.getUser(userId);
