@@ -29,3 +29,9 @@ id = "E5TK-TMbs2Q_COJjwy1Ad"
 uri = "file://artifacts/liquidity-radar/public/icon-512.png"
 type = "image"
 title = "Nuevo icono 512×512 — Google Play"
+
+[[outputs]]
+id = "NIfkhOyfbJ9tQuwg8ohm1"
+uri = "file://screenshots/feature-graphic.jpg"
+type = "image"
+title = "Feature Graphic Play Store (1024×500)"
