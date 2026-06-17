@@ -1,0 +1,26 @@
+cción necesaria: revisa el estado de registro de tus aplicaciones de Play para cumplir los requisitos de verificación de desarrolladores de Android
+Hola, JISP:
+
+Para ayudarte a cumplir los requisitos de verificación de desarrolladores de Android, hemos registrado automáticamente tus aplicaciones de Play aptas de acuerdo con las reglas de idoneidad.
+
+Resumen de tu registro automático
+0 aplicaciones se han registrado correctamente en tu cuenta verificada
+
+1 aplicación no cumple los requisitos para registrarse automáticamente y requiere registro
+
+Puede que también tengas aplicaciones en borrador que no se hayan podido registrar porque no tienen un nombre de paquete asociado.
+
+Qué debes hacer
+Ve a la página principal de Play Console para ver cuáles de tus aplicaciones de Play se han registrado automáticamente y cuáles no
+Se mostrará el estado del nombre de paquete junto a cada una de tus aplicaciones y podrás filtrar por aplicaciones no registradas.
+Registra las aplicaciones que no se hayan registrado en la página de verificación de desarrolladores de Android
+Debes hacer lo siguiente:
+Registra las aplicaciones de Google Play que quieras seguir distribuyendo y que no se hayan registrado automáticamente. Más información
+Registra las aplicaciones que distribuyas fuera de Google Play. Puedes registrarlas fácilmente en Play Console. No tienes que crear otra cuenta independiente de Android Developer Console. Más información
+Añade las claves adicionales de tus aplicaciones de Play que uses para firmarlas fuera de Google Play. Más información
+Te recomendamos que completes estos pasos lo antes posible.
+
+Las aplicaciones que no se registren como muy tarde en septiembre del 2026 ya no se podrán instalar en los dispositivos Android certificados de determinados países. Si completas ahora el registro de tus nombres de paquete, te asegurarás de que tus aplicaciones se puedan seguir distribuyendo en dispositivos Android certificados.
+
+Más información
+Para obtener más información sobre los requisitos, el proceso de registro de nombres de paquete y los plazos, visita el sitio web de verificación de desarrolladores de Android.
