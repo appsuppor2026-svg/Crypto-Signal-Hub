@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "installCommand": "pnpm install",
   "buildCommand": "pnpm run vercel-build",
   "outputDirectory": "artifacts/liquidity-radar/dist/public",
   "rewrites": [
