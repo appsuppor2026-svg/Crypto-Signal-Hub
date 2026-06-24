@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "PORT=3000 BASE_PATH=/ pnpm --filter @workspace/liquidity-radar run build",
+  "buildCommand": "pnpm -w run vercel-build",
   "outputDirectory": "artifacts/liquidity-radar/dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/server" },
-    { "source": "/:path*", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
     "api/server.ts": {
