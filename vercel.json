@@ -1,14 +1,9 @@
 {
   "version": 2,
   "buildCommand": "pnpm -w run vercel-build",
-  "outputDirectory": "public",
+  "outputDirectory": "artifacts/liquidity-radar/dist/public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/server" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ],
-  "functions": {
-    "api/server.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
