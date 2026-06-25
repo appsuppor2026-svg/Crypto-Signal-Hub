@@ -5,9 +5,8 @@ import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 import { WebhookHandlers } from "./webhookHandlers.js";
 
-const app = express();
+const app: any = express();
 
-// @ts-ignore
 app.use(
   pinoHttp({
     logger,
