@@ -7,6 +7,7 @@ import { WebhookHandlers } from "./webhookHandlers.js";
 
 const app: any = express();
 
+// @ts-ignore
 app.use(
   pinoHttp({
     logger,
@@ -31,7 +32,7 @@ app.use(
 app.post(
   '/api/stripe/webhook',
   express.raw({ type: 'application/json' }),
-  async (req, res) => {
+  async (req: any, res: any) => {
     const signature = req.headers['stripe-signature'];
     if (!signature) {
       res.status(400).json({ error: 'Missing stripe-signature' });
