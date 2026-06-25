@@ -1,9 +1,9 @@
 // ── API bases ─────────────────────────────────────────────────────────────────
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
-// Resolve the base path for same-origin API calls through the shared proxy
-const _rawBase = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
-const API_BASE = `${_rawBase}/api`;
+// Production API URL (Vercel backend) or fallback to same-origin
+const _rawBase = (import.meta.env.VITE_API_URL ?? (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '') + '/api').replace(/\/$/, '');
+const API_BASE = _rawBase;
 
 // ── Symbol maps ───────────────────────────────────────────────────────────────
 export const SYMBOL_TO_COINGECKO: Record<string, string> = {

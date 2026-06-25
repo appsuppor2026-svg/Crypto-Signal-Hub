@@ -193,8 +193,8 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
           // Send email alert
           const userEmail = localStorage.getItem('lr_sub_email') || localStorage.getItem('lr_profile_email');
           if (userEmail) {
-            const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-            fetch(`${BASE}/api/ai/alert-email`, {
+            const API_URL = import.meta.env.VITE_API_URL || '';
+            fetch(`${API_URL}/ai/alert-email`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

@@ -80,14 +80,14 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export async function subscribeToPush(alerts: PriceAlert[], email?: string): Promise<boolean> {
   if (!('PushManager' in window)) return false;
   if (Notification.permission !== 'granted') return false;
 
   try {
-    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-
-    const keyRes = await fetch(`${BASE}/api/push/vapid-key`);
+    const keyRes = await fetch(`${API_URL}/push/vapid-key`);
     if (!keyRes.ok) return false;
     const { publicKey } = await keyRes.json() as { publicKey: string };
 
@@ -100,7 +100,7 @@ export async function subscribeToPush(alerts: PriceAlert[], email?: string): Pro
       applicationServerKey: urlBase64ToUint8Array(publicKey) as any,
     });
 
-    const res = await fetch(`${BASE}/api/push/subscribe`, {
+    const res = await fetch(`${API_URL}/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -125,8 +125,7 @@ export async function subscribeToPush(alerts: PriceAlert[], email?: string): Pro
 export async function syncAlertsToPushServer(alerts: PriceAlert[]): Promise<void> {
   if (!pushSubscription) return;
   try {
-    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-    await fetch(`${BASE}/api/push/update-alerts`, {
+    await fetch(`${API_URL}/push/update-alerts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -150,8 +149,7 @@ export function getPushSubscription(): PushSubscription | null {
 export async function unsubscribeFromPush(): Promise<void> {
   if (!pushSubscription) return;
   try {
-    const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-    await fetch(`${BASE}/api/push/unsubscribe`, {
+    await fetch(`${API_URL}/push/unsubscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ endpoint: pushSubscription.endpoint }),

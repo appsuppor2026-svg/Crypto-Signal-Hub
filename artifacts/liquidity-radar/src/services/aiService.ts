@@ -8,6 +8,8 @@ export interface AnalyzeRequest {
   bias?: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export async function streamAnalysis(
   data: AnalyzeRequest,
   onChunk: (text: string) => void,
@@ -15,7 +17,7 @@ export async function streamAnalysis(
   onError: (msg: string) => void
 ): Promise<void> {
   try {
-    const res = await fetch('/api/ai/analyze', {
+    const res = await fetch(`${API_URL}/ai/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -61,7 +63,7 @@ export async function sendContactForm(data: {
   message: string;
 }): Promise<boolean> {
   try {
-    const res = await fetch('/api/ai/contact', {
+    const res = await fetch(`${API_URL}/ai/contact`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -75,7 +77,7 @@ export async function sendContactForm(data: {
 
 export async function notifyProfileSaved(profile: Record<string, string>): Promise<void> {
   try {
-    await fetch('/api/ai/profile-notify', {
+    await fetch(`${API_URL}/ai/profile-notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ profile }),

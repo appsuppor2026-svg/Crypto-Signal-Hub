@@ -37,10 +37,10 @@ export interface Plan {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 async function apiFetch(path: string, opts?: RequestInit) {
-  const res = await fetch(`${BASE}${path}`, opts);
+  const res = await fetch(`${API_URL}${path}`, opts);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `HTTP ${res.status}`);

@@ -74,8 +74,8 @@ function App() {
     }
     // Send welcome email to user + admin notification
     if (profile.email) {
-      const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-      fetch(`${BASE}/api/ai/onboarding`, {
+      const API_URL = import.meta.env.VITE_API_URL || '';
+      fetch(`${API_URL}/ai/onboarding`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),

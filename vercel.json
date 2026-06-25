@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/healthz", "destination": "/api/index.mjs" },
+    { "source": "/api/market/ticker", "destination": "/api/index.mjs" },
+    { "source": "/api/market/klines", "destination": "/api/index.mjs" },
+    { "source": "/api/ai/analyze", "destination": "/api/index.mjs" },
+    { "source": "/api/stripe/plans", "destination": "/api/index.mjs" },
+    { "source": "/api/push/vapid-key", "destination": "/api/index.mjs" },
+    { "source": "/api/(.*)", "destination": "/api/index.mjs" }
+  ],
+  "buildCommand": "echo 'No build needed'"
+}
