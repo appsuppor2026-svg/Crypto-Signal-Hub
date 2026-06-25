@@ -35,6 +35,55 @@ const _cache = new Map<string, { data: unknown; ts: number }>();
 const TTL = 60_000;
 
 /**
+ * GET /api/market/ticker?symbol=BTC
+ *
+ * Returns current price and 24h change from OKX.
+ */
+router.get("/ticker", async (req: any, res: any) => {
+  const { symbol } = req.query as Record<string, string>;
+  const sym = symbol?.toUpperCase();
+  const instId = sym ? SYMBOL_TO_OKX[sym] : undefined;
+  if (!instId) {
+    res.status(400).json({ error: `Unknown symbol: ${symbol}` });
+    return;
+  }
+
+  try {
+    const url = `${OKX_BASE}/ticker?instId=${instId}`;
+    const upstream = await fetch(url, {
+      signal: AbortSignal.timeout(12_000),
+      headers: { Accept: "application/json" },
+    }) as any;
+
+    if (!upstream.ok) {
+      req.log?.warn?.({ status: upstream.status }, "OKX ticker error");
+      res.status(502).json({ error: `Upstream ${upstream.status}` });
+      return;
+    }
+
+    const json = await upstream.json() as { code: string; data: any[] };
+    if (json.code !== "0" || !Array.isArray(json.data) || !json.data[0]) {
+      res.status(502).json({ error: "OKX returned error" });
+      return;
+    }
+
+    const t = json.data[0];
+    res.json({
+      symbol: sym,
+      price: parseFloat(t.last),
+      change24h: parseFloat(t.change24h),
+      changePercent24h: (parseFloat(t.change24h) / parseFloat(t.open24h)) * 100,
+      high24h: parseFloat(t.high24h),
+      low24h: parseFloat(t.low24h),
+      volume24h: parseFloat(t.vol24h),
+    });
+  } catch (err: any) {
+    req.log?.warn?.({ err: err.message }, "ticker fetch failed");
+    res.status(502).json({ error: "Upstream fetch failed" });
+  }
+});
+
+/**
  * GET /api/market/klines?symbol=BTC&interval=1h&limit=48
  *
  * Returns data in Binance klines format so the frontend needs no changes:
