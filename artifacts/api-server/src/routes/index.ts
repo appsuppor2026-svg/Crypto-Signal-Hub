@@ -1,11 +1,11 @@
-import { Router, type IRouter } from "express";
-import healthRouter from "./health";
-import aiRouter from "./ai";
-import marketRouter from "./market";
-import stripeRouter from "./stripe";
-import pushRouter from "./push";
+import { Router } from "express";
+import healthRouter from "./health.js";
+import aiRouter from "./ai.js";
+import marketRouter from "./market.js";
+import stripeRouter from "./stripe.js";
+import pushRouter from "./push.js";
 
-const router: IRouter = Router();
+const router: any = Router();
 
 router.use(healthRouter);
 router.use("/ai", aiRouter);

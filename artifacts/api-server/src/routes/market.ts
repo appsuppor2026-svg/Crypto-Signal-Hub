@@ -41,7 +41,7 @@ const TTL = 60_000;
  * [ [openTime_ms, open, high, low, close, volume], ... ]
  * Data is sorted ascending (oldest → newest).
  */
-router.get("/klines", async (req, res) => {
+router.get("/klines", async (req: any, res: any) => {
   const { symbol, interval, limit } = req.query as Record<string, string>;
 
   const sym    = symbol?.toUpperCase();
@@ -73,7 +73,7 @@ router.get("/klines", async (req, res) => {
     const upstream = await fetch(url, {
       signal: AbortSignal.timeout(12_000),
       headers: { Accept: "application/json" },
-    });
+    }) as any;
 
     if (!upstream.ok) {
       req.log?.warn?.({ status: upstream.status }, "OKX error");

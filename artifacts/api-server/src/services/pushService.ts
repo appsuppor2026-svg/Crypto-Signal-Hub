@@ -97,7 +97,7 @@ async function checkPricesAndNotify(): Promise<void> {
     const res = await fetch(
       `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
       { signal: AbortSignal.timeout(12_000) },
-    );
+    ) as any;
     if (!res.ok) return;
     prices = (await res.json()) as Record<string, { usd: number }>;
   } catch (err) {

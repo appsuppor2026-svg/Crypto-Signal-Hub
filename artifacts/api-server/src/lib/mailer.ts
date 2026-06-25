@@ -47,7 +47,7 @@ function buildRawMessage(opts: {
 export async function getGmailProfile(): Promise<{ emailAddress?: string; error?: string }> {
   try {
     const connectors = new ReplitConnectors();
-    const response = await connectors.proxy('google-mail', '/gmail/v1/users/me/profile', { method: 'GET' });
+    const response = await connectors.proxy('google-mail', '/gmail/v1/users/me/profile', { method: 'GET' }) as any;
     const body = await response.json() as any;
     return body;
   } catch (err: any) {
@@ -68,7 +68,7 @@ export async function sendMail(opts: {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ raw }),
-  });
+  }) as any;
 
   const responseBody = await response.text().catch(() => '');
 

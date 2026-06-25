@@ -8,9 +8,9 @@ import {
   type StoredAlert,
 } from '../services/pushService.js';
 
-const router = Router();
+const router: any = Router();
 
-router.get('/vapid-key', (_req, res) => {
+router.get('/vapid-key', (_req: any, res: any) => {
   const key = getVapidPublicKey();
   if (!key) {
     res.status(503).json({ error: 'Push notifications not configured' });
@@ -19,7 +19,7 @@ router.get('/vapid-key', (_req, res) => {
   res.json({ publicKey: key });
 });
 
-router.post('/subscribe', (req, res) => {
+router.post('/subscribe', (req: any, res: any) => {
   const { subscription, alerts, email } = req.body as {
     subscription?: webpush.PushSubscription;
     alerts?: StoredAlert[];
@@ -35,7 +35,7 @@ router.post('/subscribe', (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/update-alerts', (req, res) => {
+router.post('/update-alerts', (req: any, res: any) => {
   const { endpoint, alerts } = req.body as { endpoint?: string; alerts?: StoredAlert[] };
   if (!endpoint) {
     res.status(400).json({ error: 'Missing endpoint' });
@@ -45,7 +45,7 @@ router.post('/update-alerts', (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/unsubscribe', (req, res) => {
+router.post('/unsubscribe', (req: any, res: any) => {
   const { endpoint } = req.body as { endpoint?: string };
   if (endpoint) removeSubscription(endpoint);
   res.json({ success: true });

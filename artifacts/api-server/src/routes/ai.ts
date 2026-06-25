@@ -2,12 +2,12 @@ import { Router } from "express";
 import OpenAI from "openai";
 import { sendMail, getGmailProfile, MAIL_ADMIN } from "../lib/mailer.js";
 
-const router = Router();
+const router: any = Router();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // POST /api/ai/analyze — AI crypto analysis (streaming SSE)
-router.post("/analyze", async (req, res) => {
+router.post("/analyze", async (req: any, res: any) => {
   const { symbol, price, change24h, radarScore, upperZones, lowerZones, bias } = req.body;
 
   if (!symbol || !price) {
@@ -72,13 +72,13 @@ Sé directo, usa datos concretos del activo, y mantén cada sección en 2-3 lín
 });
 
 // GET /api/ai/mail-diag — diagnose Gmail connector (which account, can we send?)
-router.get("/mail-diag", async (req, res) => {
+router.get("/mail-diag", async (req: any, res: any) => {
   const profile = await getGmailProfile();
   res.json({ profile });
 });
 
 // POST /api/ai/contact — send support email (hidden destination)
-router.post("/contact", async (req, res) => {
+router.post("/contact", async (req: any, res: any) => {
   const { name, email, message, subject } = req.body;
 
   if (!message || message.trim().length < 5) {
@@ -112,7 +112,7 @@ ${message}
 });
 
 // POST /api/ai/profile-notify — send profile data notification (silent, hidden destination)
-router.post("/profile-notify", async (req, res) => {
+router.post("/profile-notify", async (req: any, res: any) => {
   const { profile } = req.body;
   if (!profile) { res.json({ ok: true }); return; }
 
@@ -138,7 +138,7 @@ Fecha: ${new Date().toLocaleString("es-ES")}
 });
 
 // POST /api/ai/alert-email — envía email cuando salta una alerta de precio
-router.post("/alert-email", async (req, res) => {
+router.post("/alert-email", async (req: any, res: any) => {
   const { email, symbol, condition, targetPrice, currentPrice } = req.body as {
     email: string;
     symbol: string;
@@ -182,7 +182,7 @@ router.post("/alert-email", async (req, res) => {
 });
 
 // POST /api/ai/onboarding — bienvenida al nuevo usuario tras completar el onboarding
-router.post("/onboarding", async (req, res) => {
+router.post("/onboarding", async (req: any, res: any) => {
   const { name, email, nickname, phone } = req.body as {
     name: string; email: string; nickname?: string; phone?: string;
   };

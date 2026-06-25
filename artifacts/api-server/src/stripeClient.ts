@@ -32,7 +32,7 @@ async function getStripeCredentials(): Promise<{ secretKey: string; webhookSecre
       headers: { Accept: "application/json", "x-replit-token": xReplitToken },
       signal: AbortSignal.timeout(10_000),
     }
-  );
+  ) as any;
 
   if (!resp.ok) {
     throw new Error(`Failed to fetch Stripe credentials: ${resp.status} ${resp.statusText}`);

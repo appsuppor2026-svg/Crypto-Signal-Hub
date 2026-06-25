@@ -1,11 +1,11 @@
-import { Router, type IRouter } from 'express';
+import { Router } from 'express';
 import { storage } from '../storage.js';
 import { stripeService } from '../stripeService.js';
 
-const router: IRouter = Router();
+const router: any = Router();
 
 // GET /api/stripe/plans — lista productos con precios (directo desde Stripe API)
-router.get('/plans', async (_req, res) => {
+router.get('/plans', async (_req: any, res: any) => {
   try {
     const stripe = await import('../stripeClient.js').then(m => m.getUncachableStripeClient());
 
@@ -38,7 +38,7 @@ router.get('/plans', async (_req, res) => {
 });
 
 // POST /api/stripe/checkout — crea sesión de checkout
-router.post('/checkout', async (req, res) => {
+router.post('/checkout', async (req: any, res: any) => {
   try {
     const { priceId, email } = req.body as { priceId: string; email: string };
 
@@ -74,7 +74,7 @@ router.post('/checkout', async (req, res) => {
 });
 
 // POST /api/stripe/portal — portal de gestión para el cliente
-router.post('/portal', async (req, res) => {
+router.post('/portal', async (req: any, res: any) => {
   try {
     const { email } = req.body as { email: string };
     if (!email) { res.status(400).json({ error: 'email is required' }); return; }
@@ -103,7 +103,7 @@ const TEST_ACCOUNTS = new Set([
 ]);
 
 // GET /api/stripe/status?email=... — estado de suscripción
-router.get('/status', async (req, res) => {
+router.get('/status', async (req: any, res: any) => {
   try {
     const email = req.query.email as string;
     if (!email) { res.status(400).json({ error: 'email is required' }); return; }
