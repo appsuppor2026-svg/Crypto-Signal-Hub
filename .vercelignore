@@ -1,0 +1,22 @@
+node_modules/
+.vercel/
+dist/
+*.log
+.git/
+.vscode/
+.idea/
+*.lock
+*.tsbuildinfo
+coverage/
+.nyc_output/
+.artifacts/
+attached_assets/
+.local/
+.cache/
+.agents/
+screenshots/
+.upm/
+
+# API build output - we need it
+!artifacts/api-server/dist/
+

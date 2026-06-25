@@ -7,12 +7,15 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "vercel-build": "pnpm run typecheck:libs; pnpm --filter @workspace/liquidity-radar exec vite build --config vite.config.vercel.ts"
+    "vercel-build": "pnpm run typecheck:libs; pnpm --filter @workspace/liquidity-radar exec vite build --config vite.config.vercel.ts",
+    "api-build": "pnpm run typecheck:libs; pnpm --filter @workspace/api-server run build"
   },
   "private": true,
   "devDependencies": {
+    "@vercel/node": "^5.8.20",
     "prettier": "^3.8.3",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vercel": "^54.16.0"
   },
   "dependencies": {
     "stripe": "^14.25.0",

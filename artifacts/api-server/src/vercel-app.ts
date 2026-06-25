@@ -28,9 +28,9 @@ app.use(
   }),
 );
 
-// ── Stripe webhook MUST be registered before express.json() ──
+// Stripe webhook (Vercel strips /api prefix, so route is /stripe/webhook)
 app.post(
-  '/api/stripe/webhook',
+  '/stripe/webhook',
   express.raw({ type: 'application/json' }),
   async (req: any, res: any) => {
     const signature = req.headers['stripe-signature'];
@@ -53,6 +53,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", router);
+// Mount routes at root (Vercel strips /api prefix)
+app.use("/", router);
 
 export default app;
