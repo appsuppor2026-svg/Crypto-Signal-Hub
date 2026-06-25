@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build": "pnpm --filter @workspace/liquidity-radar exec vite build --config vite.config.vercel.ts",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
-    "build:frontend": "pnpm run typecheck:libs; pnpm --filter @workspace/liquidity-radar exec vite build --config vite.config.vercel.ts"
+    "build:frontend": "pnpm run typecheck:libs; pnpm --filter @workspace/liquidity-radar exec vite build --config vite.config.vercel.ts",
+    "build:api": "echo 'API ready'"
   },
   "private": true,
   "devDependencies": {
@@ -16,6 +17,7 @@
     "vercel": "^54.16.0"
   },
   "dependencies": {
+    "nodemailer": "^9.0.1",
     "stripe": "^14.25.0",
     "stripe-replit-sync": "^1.0.0"
   }

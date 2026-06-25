@@ -157,6 +157,9 @@ importers:
 
   .:
     dependencies:
+      nodemailer:
+        specifier: ^9.0.1
+        version: 9.0.1
       stripe:
         specifier: ^14.25.0
         version: 14.25.0
@@ -3477,6 +3480,10 @@ packages:
 
   node-releases@2.0.38:
     resolution: {integrity: sha512-3qT/88Y3FbH/Kx4szpQQ4HzUbVrHPKTLVpVocKiLfoYvw9XSGOX2FmD2d6DrXbVYyAQTF2HeF6My8jmzx7/CRw==}
+
+  nodemailer@9.0.1:
+    resolution: {integrity: sha512-Gwv8SQewT616ZM/URn0H54b8PWo/Wum7md3EW2aWy1lO27+WZCX+Xyak3J+NlmHUjDh5ME+uesJUDRbR3Ye8Bw==}
+    engines: {node: '>=6.0.0'}
 
   nopt@8.1.0:
     resolution: {integrity: sha512-ieGu42u/Qsa4TFktmaKEwM6MQH0pOWnaB3htzh0JRtx84+Mebc0cbZYN5bC+6WTZ4+77xrL9Pn5m7CV6VIkV7A==}
@@ -7317,6 +7324,8 @@ snapshots:
   node-gyp-build@4.8.4: {}
 
   node-releases@2.0.38: {}
+
+  nodemailer@9.0.1: {}
 
   nopt@8.1.0:
     dependencies:
