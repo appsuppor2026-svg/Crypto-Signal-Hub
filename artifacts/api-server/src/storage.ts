@@ -61,20 +61,20 @@ export class Storage {
   }
 
   async getUser(id: string) {
-    const [user] = await db.select().from(users as any).where(eq(users.id, id) as any);
+    const [user] = await _db.select().from(_users).where(eq(_users.id, id) as any);
     return user;
   }
 
   async getUserByEmail(email: string) {
-    const [user] = await db.select().from(users as any).where(eq(users.email, email) as any);
+    const [user] = await _db.select().from(_users).where(eq(_users.email, email) as any);
     return user;
   }
 
   async upsertUser(data: { id: string; email: string }) {
-    const [user] = await db
-      .insert(users as any)
+    const [user] = await _db
+      .insert(_users)
       .values(data)
-      .onConflictDoUpdate({ target: (users as any).id, set: { email: data.email } })
+      .onConflictDoUpdate({ target: _users.id, set: { email: data.email } })
       .returning();
     return user;
   }
@@ -83,7 +83,7 @@ export class Storage {
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
   }) {
-    const [user] = await db.update(users as any).set(info).where(eq(users.id, userId) as any).returning();
+    const [user] = await _db.update(_users).set(info).where(eq(_users.id, userId) as any).returning();
     return user;
   }
 }
