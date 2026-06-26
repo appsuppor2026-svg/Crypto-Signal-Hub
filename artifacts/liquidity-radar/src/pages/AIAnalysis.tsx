@@ -158,8 +158,13 @@ export default function AIAnalysis() {
     : Math.max(-80, Math.min(80,
         ((assetData?.radarScore ?? 50) - 50) * 1.2 + pct24h * 2
       ));
-  const bullPct = Math.max(5, Math.min(95, Math.round((rawScore + 100) / 2)));
-  const bearPct = 100 - bullPct;
+  const isSideways = ind.trend === 'sideways';
+  const isNeutralRSI = ind.rsi == null || (ind.rsi > 40 && ind.rsi < 60);
+  const biasScore = Math.max(5, Math.min(95, Math.round((rawScore + 100) / 2)));
+  const superiorPct = biasScore;
+  const inferiorPct = 100 - biasScore;
+  const equilibradaPct = Math.round(isSideways && isNeutralRSI ? 65 : Math.abs(rawScore) < 15 ? 40 : 15);
+  const incertidumbrePct = Math.round(isSideways && isNeutralRSI ? 50 : 10);
 
   const isPositive  = pct24h >= 0;
   const signalColor = result?.signal.type === 'BUY'
@@ -246,8 +251,10 @@ export default function AIAnalysis() {
             </div>
             <div className="space-y-2">
               {([
-                { icon: TrendingUp,   pct: bullPct, label: t('bias.bullish'), col: 'from-green-500/80 to-green-400', textCol: 'text-green-400' },
-                { icon: TrendingDown, pct: bearPct, label: t('bias.bearish'), col: 'from-red-500/80 to-red-400',     textCol: 'text-red-400'   },
+                { icon: TrendingUp,   pct: superiorPct,     label: t('bias.superior'),     col: 'from-green-500/80 to-green-400',    textCol: 'text-green-400'   },
+                { icon: TrendingDown, pct: inferiorPct,     label: t('bias.inferior'),     col: 'from-red-500/80 to-red-400',          textCol: 'text-red-400'     },
+                { icon: Minus,        pct: equilibradaPct,  label: t('bias.equilibrada'),  col: 'from-yellow-500/80 to-yellow-400',   textCol: 'text-yellow-400'  },
+                { icon: Minus,        pct: incertidumbrePct, label: t('bias.incertidumbre'), col: 'from-blue-500/80 to-blue-400',       textCol: 'text-blue-400'    },
               ] as const).map(({ icon: Icon, pct, label, col, textCol }) => (
                 <div key={label} className="flex items-center gap-2">
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${textCol}`} />

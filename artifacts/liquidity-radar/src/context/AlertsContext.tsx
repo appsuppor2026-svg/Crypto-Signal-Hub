@@ -31,7 +31,7 @@ export interface SmartAlertPrefs {
 export interface AssetSnapshot {
   symbol: string;
   radarScore: number;
-  bias: 'bullish' | 'neutral' | 'bearish';
+  bias: 'superior' | 'inferior' | 'equilibrada' | 'incertidumbre';
   upperZoneAmount: string;
   lowerZoneAmount: string;
 }
@@ -249,7 +249,7 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       if (wasBelow && canFire('radarHigh')) {
         fired.push({
           title: `📡 ${curr.symbol} · Radar Score Alto`,
-          body: `Radar Score ${curr.radarScore} > 80 — condiciones alcistas extremas`,
+          body: `Radar Score ${curr.radarScore} > 80 — liquidez superior extrema`,
         });
       }
     }
@@ -259,14 +259,14 @@ export function AlertsProvider({ children }: { children: ReactNode }) {
       if (wasAbove && canFire('radarLow')) {
         fired.push({
           title: `📡 ${curr.symbol} · Radar Score Bajo`,
-          body: `Radar Score ${curr.radarScore} < 20 — condiciones bajistas extremas`,
+          body: `Radar Score ${curr.radarScore} < 20 — liquidez inferior extrema`,
         });
       }
     }
 
     if (prefs.biasChange && prev !== null && prev.bias !== curr.bias) {
       const label = (b: string) =>
-        b === 'bullish' ? '🟢 Alcista' : b === 'bearish' ? '🔴 Bajista' : '⚪ Neutral';
+        b === 'superior' ? '🟢 Liquidez Superior' : b === 'inferior' ? '🔴 Liquidez Inferior' : b === 'equilibrada' ? '🟡 Equilibrada' : '🔵 Incertidumbre';
       if (canFire('biasChange')) {
         fired.push({
           title: `🔄 ${curr.symbol} · Cambio de Sesgo`,

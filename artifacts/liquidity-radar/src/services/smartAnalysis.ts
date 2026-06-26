@@ -126,13 +126,13 @@ export function runSmartAnalysis(asset: AssetData, prices: number[], lang: 'es' 
   const emaGap = ema ? (((price - ema) / ema) * 100).toFixed(2) : null;
 
   if (lang === 'en') {
-    const trendLabel = trend === 'up' ? 'bullish' : trend === 'down' ? 'bearish' : 'sideways';
+    const trendLabel = trend === 'up' ? 'Upper Liquidity' : trend === 'down' ? 'Lower Liquidity' : 'Balanced';
     const rsiLabel = rsi !== null
       ? (rsi > 70 ? 'overbought' : rsi < 30 ? 'oversold' : 'neutral zone')
       : 'no RSI data';
 
     const emaText = ema
-      ? `Price is ${price > ema ? 'above' : 'below'} EMA50 (${fmt(ema)}), a ${Math.abs(parseFloat(emaGap!))}% ${price > ema ? 'advantage' : 'disadvantage'}.`
+      ? `Price is ${price > ema ? 'above' : 'below'} EMA50 (${fmt(ema)}), a ${Math.abs(parseFloat(emaGap!))}% ${price > ema ? 'upper liquidity' : 'lower liquidity'}.`
       : '';
     const sqzText = inSqueeze
       ? 'Squeeze Momentum indicates volatility compression — a sharp move is expected soon.'
@@ -163,7 +163,7 @@ export function runSmartAnalysis(asset: AssetData, prices: number[], lang: 'es' 
     const escenarioAlcista =
       `To activate, ${asset.symbol} needs to break above ${upperZone ? fmt(upperZone.price) : 'immediate resistance'} with volume. `
       + `On a strong breakout, the next target would be ${upperZoneLevels?.[1] ? fmt(upperZoneLevels[1].price) : 'upper liquidity zone'}. `
-      + (rsi && rsi < 50 ? 'RSI still has bullish room without being overbought.' :
+      + (rsi && rsi < 50 ? 'RSI still has room for upper liquidity movement without being overbought.' :
          rsi && rsi > 70 ? 'Note: overbought RSI could limit short-term upside.' : '');
 
     const escenarioBajista =
@@ -196,7 +196,7 @@ export function runSmartAnalysis(asset: AssetData, prices: number[], lang: 'es' 
   }
 
   // ── Spanish (default) ───────────────────────────────────────────
-  const trendLabel = trend === 'up' ? 'alcista' : trend === 'down' ? 'bajista' : 'lateral';
+  const trendLabel = trend === 'up' ? 'Liquidez Superior' : trend === 'down' ? 'Liquidez Inferior' : 'Equilibrada';
   const rsiLabel = rsi !== null
     ? (rsi > 70 ? 'sobrecomprado' : rsi < 30 ? 'sobrevendido' : 'en zona neutral')
     : 'sin datos RSI';
@@ -233,7 +233,7 @@ export function runSmartAnalysis(asset: AssetData, prices: number[], lang: 'es' 
   const escenarioAlcista =
     `Para activarse, ${asset.symbol} necesita superar ${upperZone ? fmt(upperZone.price) : 'resistencia inmediata'} con volumen. `
     + `Si rompe con fuerza, el siguiente objetivo sería ${upperZoneLevels?.[1] ? fmt(upperZoneLevels[1].price) : 'zona de liquidez superior'}. `
-    + (rsi && rsi < 50 ? 'El RSI aún tiene recorrido alcista sin estar sobrecomprado.' :
+    + (rsi && rsi < 50 ? 'El RSI aún tiene recorrido hacia liquidez superior sin estar sobrecomprado.' :
        rsi && rsi > 70 ? 'Ojo: el RSI sobrecomprado podría limitar el alza en el corto plazo.' : '');
 
   const escenarioBajista =

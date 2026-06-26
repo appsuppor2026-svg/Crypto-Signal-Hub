@@ -5,7 +5,7 @@ export interface AssetData {
   change24h: number;
   changePercent24h: number;
   radarScore: number;
-  bias: 'bullish' | 'neutral' | 'bearish';
+  bias: 'superior' | 'inferior' | 'equilibrada' | 'incertidumbre';
   metrics: {
     liquidity: number;
     openInterest: number;

@@ -35,9 +35,10 @@ export function RadarScoreCard({ asset }: RadarScoreCardProps) {
   }, [asset.radarScore]);
 
   const getBiasColor = () => {
-    if (asset.bias === 'bullish') return 'text-green-500 bg-green-500/10 border-green-500/20 shadow-[0_0_10px_0_rgba(34,197,94,0.2)]';
-    if (asset.bias === 'bearish') return 'text-destructive bg-destructive/10 border-destructive/20 shadow-[0_0_10px_0_rgba(239,68,68,0.2)]';
-    return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20 shadow-[0_0_10px_0_rgba(234,179,8,0.2)]';
+    if (asset.bias === 'superior') return 'text-green-500 bg-green-500/10 border-green-500/20 shadow-[0_0_10px_0_rgba(34,197,94,0.2)]';
+    if (asset.bias === 'inferior') return 'text-destructive bg-destructive/10 border-destructive/20 shadow-[0_0_10px_0_rgba(239,68,68,0.2)]';
+    if (asset.bias === 'equilibrada') return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20 shadow-[0_0_10px_0_rgba(234,179,8,0.2)]';
+    return 'text-blue-400 bg-blue-500/10 border-blue-500/20 shadow-[0_0_10px_0_rgba(59,130,246,0.2)]';
   };
 
   const getScoreColorHex = () => {

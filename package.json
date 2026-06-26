@@ -14,7 +14,7 @@
     "@vercel/node": "^5.8.20",
     "prettier": "^3.8.3",
     "typescript": "~5.9.3",
-    "vercel": "^54.16.0"
+    "vercel": "^54.17.1"
   },
   "dependencies": {
     "nodemailer": "^9.0.1",
